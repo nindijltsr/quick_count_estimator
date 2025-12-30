@@ -1,0 +1,12 @@
+# Mengabaikan file bawaan/boilerplate agar tidak dihitung dalam statistik bahasa
+android/** linguist-vendored
+ios/** linguist-vendored
+windows/** linguist-vendored
+linux/** linguist-vendored
+macos/** linguist-vendored
+web/** linguist-vendored
+
+# (Opsional) Mengabaikan file hasil build/generated
+build/** linguist-vendored
+*.g.dart linguist-generated
+*.freezed.dart linguist-generated
