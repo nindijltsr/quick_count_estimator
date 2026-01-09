@@ -63,6 +63,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '850416335238',
     projectId: 'quick-count-estimator',
     storageBucket: 'quick-count-estimator.firebasestorage.app',
+    androidClientId: '850416335238-bb05sm672ut0t00gv04at57m67jjonuq.apps.googleusercontent.com',
+    iosClientId: '850416335238-tk9k1131e6mfjl6r2805q2kuau7mcr6u.apps.googleusercontent.com',
     iosBundleId: 'com.example.quickCountEstimator',
   );
 
@@ -72,6 +74,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '850416335238',
     projectId: 'quick-count-estimator',
     storageBucket: 'quick-count-estimator.firebasestorage.app',
+    androidClientId: '850416335238-bb05sm672ut0t00gv04at57m67jjonuq.apps.googleusercontent.com',
+    iosClientId: '850416335238-tk9k1131e6mfjl6r2805q2kuau7mcr6u.apps.googleusercontent.com',
     iosBundleId: 'com.example.quickCountEstimator',
   );
 

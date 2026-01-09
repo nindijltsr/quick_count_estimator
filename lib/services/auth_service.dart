@@ -1,0 +1,56 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+class AuthService {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // 1. Fungsi Login ke Google & Firebase
+  Future<User?> loginWithGoogle() async {
+    try {
+      // Trigger Popup Google
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) return null;
+
+      // Ambil Auth Credential dari Google
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      
+      // Buat credential
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Sign In ke Firebase
+      UserCredential userCredential = await _auth.signInWithCredential(credential);
+      return userCredential.user;
+    } catch (e) {
+      print('Error login: $e');
+      rethrow;
+    }
+  }
+
+  // 2. Fungsi Cek Role di Database (Firestore)
+  Future<String> getUserRole(String email) async {
+    try {
+      DocumentSnapshot doc = await _firestore.collection('users').doc(email).get();
+      
+      if (doc.exists) {
+        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+        return data['role'] ?? 'user'; 
+      } else {
+        throw "Email tidak terdaftar di sistem. Hubungi Admin.";
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // 3. Fungsi Logout
+  Future<void> logout() async {
+    await _googleSignIn.signOut();
+    await _auth.signOut();
+  }
+}
