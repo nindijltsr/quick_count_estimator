@@ -4,6 +4,11 @@ import '../../services/auth_service.dart';
 import '../../utils/styles.dart';
 import '../auth/login_page.dart';
 
+// Import halaman-halaman yang sudah dipisah
+import 'pages/user_management_page.dart';
+// import 'pages/dashboard_page.dart'; // Nanti dibuat
+// ... import lainnya
+
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
 
@@ -12,19 +17,30 @@ class AdminDashboard extends StatefulWidget {
 }
 
 class _AdminDashboardState extends State<AdminDashboard> {
-  int _selectedIndex = 3; // Default ke Manajemen Akun
+  // GANTI KE 0 AGAR DEFAULTNYA DASHBOARD
+  int _selectedIndex = 0; 
+
+  // Daftar Halaman (Sesuai urutan Sidebar)
+  final List<Widget> _pages = [
+    const Center(child: Text("Halaman Dashboard (Index 0)")), // Placeholder Dashboard
+    const Center(child: Text("Halaman Proyek (Index 1)")),    // Placeholder Proyek
+    const Center(child: Text("Halaman Master Harga (Index 2)")), // Placeholder Master Harga
+    const UserManagementPage(), // <--- Panggil Class yang baru kita buat tadi (Index 3)
+    const Center(child: Text("Halaman Pengaturan (Index 4)")), // Placeholder Pengaturan
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Row(
         children: [
-          // --- SIDEBAR ---
+          // --- SIDEBAR (Tetap sama) ---
           Container(
             width: 250,
             color: AppStyles.primaryGreen,
             child: Column(
               children: [
+                // Header Sidebar
                 Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Row(
@@ -45,7 +61,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
                 const Divider(color: Colors.white24),
                 
-                // Menu Sidebar
+                // Menu Items
                 _buildMenuItem(0, Icons.dashboard, 'Dashboard'),
                 _buildMenuItem(1, Icons.folder_open, 'Proyek'),
                 _buildMenuItem(2, Icons.storage, 'Master Harga'),
@@ -54,7 +70,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 
                 const Spacer(),
                 
-                // Tombol Logout
+                // Logout Button
                 Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: ElevatedButton(
@@ -75,15 +91,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
           ),
 
-          // --- KONTEN KANAN ---
+          // --- KONTEN KANAN (Dinamis) ---
           Expanded(
             child: Container(
-              color: AppStyles.backgroundGrey,
+              color: AppStyles.backgroundGrey, // Pastikan background konsisten
               padding: const EdgeInsets.all(20),
-              // Jika menu 3 dipilih -> Tampilkan Tabel User
-              child: _selectedIndex == 3 
-                  ? _buildUserManagementContent() 
-                  : Center(child: Text("Halaman index $_selectedIndex belum dibuat")),
+              // MAGIC HAPPENS HERE:
+              // Dia akan menampilkan widget sesuai index yang dipilih dari List _pages
+              child: _pages[_selectedIndex], 
             ),
           ),
         ],
@@ -91,7 +106,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  // Widget Item Sidebar
   Widget _buildMenuItem(int index, IconData icon, String title) {
     final isSelected = _selectedIndex == index;
     return ListTile(
@@ -100,109 +114,5 @@ class _AdminDashboardState extends State<AdminDashboard> {
       tileColor: isSelected ? Colors.white.withOpacity(0.1) : null,
       onTap: () => setState(() => _selectedIndex = index),
     );
-  }
-
-  // Widget Konten: Manajemen Akun (Tabel)
-  Widget _buildUserManagementContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('MANAJEMEN AKUN', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                Text('Kelola Akun Pengguna', style: TextStyle(color: Colors.grey)),
-              ],
-            ),
-            ElevatedButton.icon(
-              onPressed: () {
-                // Nanti kita buat logika Pop Up Tambah User di sini
-              },
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Tambah Pengguna'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppStyles.primaryGreen,
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        
-        // Card Tabel
-        Expanded(
-          child: Card(
-            color: Colors.white,
-            elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Cari nama...',
-                      prefixIcon: const Icon(Icons.search),
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Expanded(
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: DataTable(
-                        headingRowColor: MaterialStateProperty.all(Colors.grey[200]),
-                        columns: const [
-                          DataColumn(label: Text('No')),
-                          DataColumn(label: Text('Nama Lengkap')),
-                          DataColumn(label: Text('Email')),
-                          DataColumn(label: Text('Role')),
-                          DataColumn(label: Text('Status')),
-                          DataColumn(label: Text('Aksi')),
-                        ],
-                        rows: [
-                          _buildRow('1', 'Nindi Nurrahma', 'nindi@gmail.com', 'Admin', true),
-                          _buildRow('2', 'Jeje', 'jeje@gmail.com', 'Surveyor', true),
-                          _buildRow('3', 'Budi Santoso', 'budi@gmail.com', 'Surveyor', false),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  DataRow _buildRow(String no, String nama, String email, String role, bool isActive) {
-    return DataRow(cells: [
-      DataCell(Text(no)),
-      DataCell(Text(nama)),
-      DataCell(Text(email)),
-      DataCell(Text(role)),
-      DataCell(Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: isActive ? Colors.green[100] : Colors.red[100],
-          borderRadius: BorderRadius.circular(4),
-        ),
-        child: Text(isActive ? 'Aktif' : 'Non-aktif', 
-          style: TextStyle(color: isActive ? Colors.green[800] : Colors.red[800], fontSize: 12)),
-      )),
-      DataCell(Row(
-        children: [
-          IconButton(icon: const Icon(Icons.edit, color: Colors.blue), onPressed: () {}),
-          IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () {}),
-        ],
-      )),
-    ]);
   }
 }

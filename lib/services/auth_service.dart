@@ -7,48 +7,66 @@ class AuthService {
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // 1. Fungsi Login ke Google & Firebase
-  Future<User?> loginWithGoogle() async {
+  // Login Google: Mengembalikan Map berisi User dan Role
+  // Contoh return: {'user': UserObject, 'role': 'admin'}
+  Future<Map<String, dynamic>?> loginWithGoogle() async {
     try {
-      // Trigger Popup Google
+      // 1. Google Sign In Flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) return null;
 
-      // Ambil Auth Credential dari Google
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      
-      // Buat credential
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      // Sign In ke Firebase
+      // 2. Firebase Auth
       UserCredential userCredential = await _auth.signInWithCredential(credential);
-      return userCredential.user;
-    } catch (e) {
-      print('Error login: $e');
-      rethrow;
-    }
-  }
+      User? user = userCredential.user;
 
-  // 2. Fungsi Cek Role di Database (Firestore)
-  Future<String> getUserRole(String email) async {
-    try {
-      DocumentSnapshot doc = await _firestore.collection('users').doc(email).get();
-      
-      if (doc.exists) {
-        Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-        return data['role'] ?? 'user'; 
-      } else {
-        throw "Email tidak terdaftar di sistem. Hubungi Admin.";
+      if (user != null) {
+        // 3. Cek Whitelist (Cari Email di Firestore)
+        final QuerySnapshot result = await _firestore
+            .collection('users')
+            .where('email', isEqualTo: user.email)
+            .limit(1)
+            .get();
+
+        // Validasi: Apakah Email ada?
+        if (result.docs.isEmpty) {
+          await logout();
+          throw "Email tidak terdaftar dalam sistem.";
+        }
+
+        final userData = result.docs.first.data() as Map<String, dynamic>;
+
+        // Validasi: Apakah Status Aktif?
+        bool isActive = userData['is_active'] ?? false;
+        if (!isActive) {
+          await logout();
+          throw "Akun dinonaktifkan. Hubungi Admin.";
+        }
+
+        // Update data terakhir login
+        await _firestore.collection('users').doc(result.docs.first.id).update({
+          'uid': user.uid,
+          'last_login': FieldValue.serverTimestamp(),
+        });
+
+        // KEMBALIKAN DATA USER & ROLE (PENTING!)
+        String role = userData['role'] ?? 'user';
+        return {
+          'user': user,
+          'role': role,
+        };
       }
     } catch (e) {
-      rethrow;
+      rethrow; // Lempar error ke UI
     }
+    return null;
   }
 
-  // 3. Fungsi Logout
   Future<void> logout() async {
     await _googleSignIn.signOut();
     await _auth.signOut();
