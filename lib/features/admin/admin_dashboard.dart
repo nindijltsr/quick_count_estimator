@@ -4,10 +4,7 @@ import '../../services/auth_service.dart';
 import '../../utils/styles.dart';
 import '../auth/login_page.dart';
 
-// Import halaman-halaman yang sudah dipisah
 import 'pages/user_management_page.dart';
-// import 'pages/dashboard_page.dart'; // Nanti dibuat
-// ... import lainnya
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -17,16 +14,14 @@ class AdminDashboard extends StatefulWidget {
 }
 
 class _AdminDashboardState extends State<AdminDashboard> {
-  // GANTI KE 0 AGAR DEFAULTNYA DASHBOARD
   int _selectedIndex = 0; 
 
-  // Daftar Halaman (Sesuai urutan Sidebar)
   final List<Widget> _pages = [
-    const Center(child: Text("Halaman Dashboard (Index 0)")), // Placeholder Dashboard
-    const Center(child: Text("Halaman Proyek (Index 1)")),    // Placeholder Proyek
-    const Center(child: Text("Halaman Master Harga (Index 2)")), // Placeholder Master Harga
-    const UserManagementPage(), // <--- Panggil Class yang baru kita buat tadi (Index 3)
-    const Center(child: Text("Halaman Pengaturan (Index 4)")), // Placeholder Pengaturan
+    const Center(child: Text("Halaman Dashboard (Index 0)")),
+    const Center(child: Text("Halaman Proyek (Index 1)")),   
+    const Center(child: Text("Halaman Master Harga (Index 2)")),
+    const UserManagementPage(), 
+    const Center(child: Text("Halaman Pengaturan (Index 4)")), 
   ];
 
   @override
@@ -34,13 +29,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return Scaffold(
       body: Row(
         children: [
-          // --- SIDEBAR (Tetap sama) ---
           Container(
             width: 250,
             color: AppStyles.primaryGreen,
             child: Column(
               children: [
-                // Header Sidebar
+
                 Padding(
                   padding: const EdgeInsets.all(24.0),
                   child: Row(
@@ -61,7 +55,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
                 const Divider(color: Colors.white24),
                 
-                // Menu Items
                 _buildMenuItem(0, Icons.dashboard, 'Dashboard'),
                 _buildMenuItem(1, Icons.folder_open, 'Proyek'),
                 _buildMenuItem(2, Icons.storage, 'Master Harga'),
@@ -91,13 +84,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
             ),
           ),
 
-          // --- KONTEN KANAN (Dinamis) ---
           Expanded(
             child: Container(
-              color: AppStyles.backgroundGrey, // Pastikan background konsisten
+              color: AppStyles.backgroundGrey, 
               padding: const EdgeInsets.all(20),
-              // MAGIC HAPPENS HERE:
-              // Dia akan menampilkan widget sesuai index yang dipilih dari List _pages
               child: _pages[_selectedIndex], 
             ),
           ),

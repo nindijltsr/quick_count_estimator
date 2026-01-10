@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../services/auth_service.dart'; // Pastikan path ini benar (naik 2 folder ke services)
-import '../auth/login_page.dart'; // Sesuaikan path ini ke lokasi login_page.dart kamu
+import '../../services/auth_service.dart'; 
+import '../auth/login_page.dart'; 
 
 class UserDashboard extends StatefulWidget {
   const UserDashboard({super.key});
@@ -17,21 +17,18 @@ class _UserDashboardState extends State<UserDashboard> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Dashboard User"),
-        backgroundColor: Colors.orange, // Pembeda warna dengan Admin (Hijau)
+        backgroundColor: Colors.orange, 
         actions: [
-          // Tombol Logout (Penting buat testing)
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              // 1. Logout dari Firebase & Google
               await _authService.logout();
               
-              // 2. Kembali ke Halaman Login
               if (mounted) {
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const LoginPage()),
-                  (route) => false, // Hapus semua riwayat halaman belakang
+                  (route) => false, 
                 );
               }
             },

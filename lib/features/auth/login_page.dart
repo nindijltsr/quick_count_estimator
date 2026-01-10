@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart'; // Untuk cek kIsWeb
+import 'package:flutter/foundation.dart'; 
 import '../../services/auth_service.dart';
 import '../../utils/styles.dart';
-
-// --- IMPORT DASHBOARD ---
 import '../admin/admin_dashboard.dart';
-import '../user/user_dashboard.dart'; // <--- Import User Dashboard
+import '../user/user_dashboard.dart'; 
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -21,7 +19,6 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    // Cek tampilan lebar (Web) atau sempit (Mobile)
     final isWebDisplay = screenWidth > 800;
 
     return Scaffold(
@@ -88,19 +85,14 @@ class _LoginPageState extends State<LoginPage> {
                           onPressed: () async {
                             setState(() => _isLoading = true);
                             try {
-                              // 1. Panggil Service Login (Validasi Whitelist & Status)
                               final result =
                                   await _authService.loginWithGoogle();
 
                               if (result != null) {
-                                String role = result['role']; // 'admin' atau 'user'
+                                String role = result['role'];
 
-                                // --- LOGIKA PENGATUR LALU LINTAS ---
-
-                                // SKENARIO 1: ADMIN LOGIN
                                 if (role == 'admin') {
                                   if (kIsWeb) {
-                                    // Admin di Web -> Silakan Masuk
                                     if (mounted) {
                                       Navigator.pushReplacement(
                                         context,
@@ -110,14 +102,11 @@ class _LoginPageState extends State<LoginPage> {
                                       );
                                     }
                                   } else {
-                                    // Admin di Android -> TOLAK (Logout Paksa)
                                     await _authService.logout();
                                     throw "Admin harus login melalui Website (Laptop/PC).";
                                   }
                                 }
-                                // SKENARIO 2: USER (SURVEYOR) LOGIN
                                 else if (role == 'user') {
-                                  // User (Surveyor) boleh masuk Dashboard User
                                   if (mounted) {
                                     Navigator.pushReplacement(
                                       context,
@@ -129,7 +118,7 @@ class _LoginPageState extends State<LoginPage> {
                                 }
                               }
                             } catch (e) {
-                              // Tangkap Error (Akun non-aktif, Email salah, Admin di HP, dll)
+
                               if (mounted) {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
