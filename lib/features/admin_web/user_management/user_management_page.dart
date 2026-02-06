@@ -1,8 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../../../utils/styles.dart';
-import '../../../../models/user_model.dart';
-import '../../../../services/user_service.dart';
+import '../../../shared/utils/styles.dart';
+import '../../../shared/models/user_model.dart';
+import '../../../shared/services/user_service.dart';
 
 class UserManagementPage extends StatefulWidget {
   const UserManagementPage({super.key});

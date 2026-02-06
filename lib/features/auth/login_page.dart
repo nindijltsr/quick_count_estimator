@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart'; 
-import '../../services/auth_service.dart';
-import '../../utils/styles.dart';
-import '../admin/admin_dashboard.dart';
-import '../user/user_dashboard.dart'; 
+import '../../shared/services/auth_service.dart';
+import '../../shared/utils/styles.dart';
+import '../admin_web/dashboard/admin_dashboard.dart';
+import '../user_android/main/user_main_page.dart'; 
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -112,7 +112,7 @@ class _LoginPageState extends State<LoginPage> {
                                       context,
                                       MaterialPageRoute(
                                           builder: (_) =>
-                                              const UserDashboard()),
+                                              const UserMainPage()),
                                     );
                                   }
                                 }
