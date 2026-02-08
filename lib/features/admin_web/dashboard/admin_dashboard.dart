@@ -4,8 +4,10 @@ import '../../../shared/services/auth_service.dart';
 import '../../../shared/utils/styles.dart';
 import '../../auth/login_page.dart';
 
+import 'dashboard_page.dart'; 
+import '../projects/project_page.dart';
 import '../user_management/user_management_page.dart';
-
+import '../settings/settings_page.dart';
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
 
@@ -17,11 +19,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
   int _selectedIndex = 0; 
 
   final List<Widget> _pages = [
-    const Center(child: Text("Halaman Dashboard (Index 0)")),
-    const Center(child: Text("Halaman Proyek (Index 1)")),   
-    const Center(child: Text("Halaman Master Harga (Index 2)")),
-    const UserManagementPage(), 
-    const Center(child: Text("Halaman Pengaturan (Index 4)")), 
+    const DashboardPage(),      
+    const ProjectPage(),        
+    const Center(child: Text("Halaman Master Harga (Segera Hadir)")), // Index 2
+    const UserManagementPage(),  
+    const SettingsPage(),
   ];
 
   @override
