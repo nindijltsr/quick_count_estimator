@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class PricePage extends StatelessWidget {
-  const PricePage({super.key});
+class HistoryPage extends StatelessWidget {
+  const HistoryPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -11,10 +11,10 @@ class PricePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.storage, size: 80, color: Colors.grey),
+            Icon(Icons.history, size: 80, color: Colors.grey),
             SizedBox(height: 20),
             Text(
-              "Halaman Master Data\nAkan Segera Hadir",
+              "Halaman Riwayat Aktivitas\nAkan Segera Hadir",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 18,

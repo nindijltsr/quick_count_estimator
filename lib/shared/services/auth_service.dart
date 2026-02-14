@@ -30,18 +30,19 @@ class AuthService {
 
         if (result.docs.isEmpty) {
           await logout();
-          throw "Email tidak terdaftar dalam sistem.";
+          throw "Email tidak terdaftar dalam sistem. Hubungi Admin.";
         }
 
-        final userData = result.docs.first.data() as Map<String, dynamic>;
+        final userDoc = result.docs.first;
+        final userData = userDoc.data() as Map<String, dynamic>;
 
-        bool isActive = userData['is_active'] ?? false;
+        bool isActive = userData['is_active'] ?? true; 
         if (!isActive) {
           await logout();
           throw "Akun dinonaktifkan. Hubungi Admin.";
         }
 
-        await _firestore.collection('users').doc(result.docs.first.id).update({
+        await _firestore.collection('users').doc(userDoc.id).update({
           'uid': user.uid,
           'last_login': FieldValue.serverTimestamp(),
         });
@@ -53,6 +54,7 @@ class AuthService {
         };
       }
     } catch (e) {
+      await logout(); 
       rethrow; 
     }
     return null;

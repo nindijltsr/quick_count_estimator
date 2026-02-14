@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart'; 
 import 'package:firebase_auth/firebase_auth.dart'; 
 import 'package:cloud_firestore/cloud_firestore.dart'; 
 import '../../shared/services/auth_service.dart';
@@ -90,7 +90,7 @@ class _LoginPageState extends State<LoginPage> {
                 const SizedBox(height: 20),
 
                 // ======================
-                // FITUR : LOGIN DUMMY
+                // LOGIN TESTING
                 // ======================
                 TextButton(
                   onPressed: () {
@@ -101,7 +101,6 @@ class _LoginPageState extends State<LoginPage> {
                     style: TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
                 ),
-                // ============================================================
               ],
             ),
           ),
@@ -162,7 +161,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   // ============================
-  // FUNGSI : LOGIN DUMMY 
+  // LOGIN TESTING
   // ============================
   void _showTestLoginDialog(BuildContext context) {
     final emailController = TextEditingController();
@@ -175,13 +174,13 @@ class _LoginPageState extends State<LoginPage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text("Login Tester (Dummy)"),
+              title: const Text("Login Testing"),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: emailController,
-                    decoration: const InputDecoration(labelText: "Email Dummy"),
+                    decoration: const InputDecoration(labelText: "Email"),
                   ),
                   TextField(
                     controller: passwordController,
@@ -212,22 +211,34 @@ class _LoginPageState extends State<LoginPage> {
                                     email: emailController.text.trim(),
                                     password: passwordController.text.trim());
 
-                            DocumentSnapshot userDoc = await FirebaseFirestore.instance
+                            final QuerySnapshot result = await FirebaseFirestore.instance
                                 .collection('users')
-                                .doc(userCredential.user!.uid)
+                                .where('email', isEqualTo: userCredential.user!.email)
+                                .limit(1)
                                 .get();
 
-                            if (userDoc.exists) {
-                              String role = userDoc.get('role');
-                              Navigator.pop(ctx); // Tutup Dialog
-                              await _navigateBasedOnRole(role); // Masuk ke App
+                            if (result.docs.isNotEmpty) {
+                              final userData = result.docs.first.data() as Map<String, dynamic>;
+                              
+                              await FirebaseFirestore.instance.collection('users').doc(result.docs.first.id).update({
+                                'uid': userCredential.user!.uid,
+                              });
+
+                              String role = userData['role'] ?? 'user';
+                              
+                              if (ctx.mounted) {
+                                Navigator.pop(ctx); 
+                                await _navigateBasedOnRole(role); 
+                              }
                             } else {
-                              throw "User tidak ditemukan di database.";
+                              throw "Email terdaftar di Auth, tapi Data Profil tidak ditemukan di Database.";
                             }
                           } catch (e) {
-                             ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text("Gagal Login Dummy: $e"), backgroundColor: Colors.red)
-                             );
+                             if (ctx.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text("Gagal Login: $e"), backgroundColor: Colors.red)
+                               );
+                             }
                           } finally {
                              setDialogState(() => isDialogLoading = false);
                           }

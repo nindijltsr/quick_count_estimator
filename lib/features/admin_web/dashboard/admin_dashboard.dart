@@ -8,6 +8,9 @@ import 'dashboard_page.dart';
 import '../projects/project_page.dart';
 import '../user_management/user_management_page.dart';
 import '../settings/settings_page.dart';
+import '../history/history_page.dart';
+import '../master_data/price_page.dart';
+
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
 
@@ -19,11 +22,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
   int _selectedIndex = 0; 
 
   final List<Widget> _pages = [
-    const DashboardPage(),      
+    const DashboardPage(),       
     const ProjectPage(),        
-    const Center(child: Text("Halaman Master Harga (Segera Hadir)")), // Index 2
+    const PricePage(), 
     const UserManagementPage(),  
-    const SettingsPage(),
+    const HistoryPage(), 
+    const SettingsPage(), 
   ];
 
   @override
@@ -31,6 +35,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return Scaffold(
       body: Row(
         children: [
+
           Container(
             width: 250,
             color: AppStyles.primaryGreen,
@@ -61,11 +66,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 _buildMenuItem(1, Icons.folder_open, 'Proyek'),
                 _buildMenuItem(2, Icons.storage, 'Master Harga'),
                 _buildMenuItem(3, Icons.people, 'Manajemen Akun'),
-                _buildMenuItem(4, Icons.settings, 'Pengaturan'),
+                _buildMenuItem(4, Icons.history, 'Riwayat Aktivitas'), 
+                _buildMenuItem(5, Icons.settings, 'Pengaturan'),       
                 
                 const Spacer(),
                 
-                // Logout Button
                 Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: ElevatedButton(
