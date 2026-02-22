@@ -1,5 +1,12 @@
+import 'dart:async'; 
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+
 import '../../../shared/utils/styles.dart';
+import '../../../shared/services/auth_service.dart';
+import '../../auth/login_page.dart';
 
 import '../dashboard/user_dashboard.dart';
 import '../projects/project_page.dart';
@@ -14,13 +21,64 @@ class UserMainPage extends StatefulWidget {
 
 class _UserMainPageState extends State<UserMainPage> {
   int _selectedIndex = 0;
-
-  // Daftar Halaman 
+  StreamSubscription<QuerySnapshot>? _userSubscription; 
   final List<Widget> _pages = [
     const UserDashboard(), 
     const ProjectPage(),   
     const ProfilePage(),   
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _monitorUserStatus(); 
+  }
+
+  // Ffitur check is_active real time
+  void _monitorUserStatus() {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser == null || currentUser.email == null) return;
+
+    _userSubscription = FirebaseFirestore.instance
+        .collection('users')
+        .where('email', isEqualTo: currentUser.email)
+        .snapshots()
+        .listen((snapshot) async {
+      
+      if (snapshot.docs.isNotEmpty) {
+        final userData = snapshot.docs.first.data();
+        final isActive = userData['is_active'] ?? true;
+
+        // jika akun nonaktif
+        if (!isActive) {
+          _userSubscription?.cancel();
+          await context.read<AuthService>().logout();
+
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Akun Anda telah dinonaktifkan oleh Admin."),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 4),
+              ),
+            );
+
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => const LoginPage()),
+              (route) => false,
+            );
+          }
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _userSubscription?.cancel();
+    super.dispose();
+  }
 
   void _onItemTapped(int index) {
     setState(() {
