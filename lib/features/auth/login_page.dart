@@ -89,9 +89,7 @@ class _LoginPageState extends State<LoginPage> {
 
                 const SizedBox(height: 20),
 
-                // ======================
                 // LOGIN TESTING
-                // ======================
                 TextButton(
                   onPressed: () {
                     _showTestLoginDialog(context);
@@ -160,9 +158,7 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  // ============================
   // LOGIN TESTING
-  // ============================
   void _showTestLoginDialog(BuildContext context) {
     final emailController = TextEditingController();
     final passwordController = TextEditingController();

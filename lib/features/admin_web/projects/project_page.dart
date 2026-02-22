@@ -20,7 +20,6 @@ class _ProjectPageState extends State<ProjectPage> {
   @override
   void initState() {
     super.initState();
-    // 2. Listener untuk mendeteksi ketikan user
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
@@ -59,7 +58,7 @@ class _ProjectPageState extends State<ProjectPage> {
             ),
             const SizedBox(height: 25),
 
-            // --- SEARCH BAR ---
+            // search bar
             Container(
               height: 50,
               decoration: BoxDecoration(
@@ -93,7 +92,7 @@ class _ProjectPageState extends State<ProjectPage> {
             ),
             const SizedBox(height: 20),
 
-            // --- TABEL DATA ---
+            // tabel data
             Expanded(
               child: Container(
                 width: double.infinity,
@@ -121,7 +120,7 @@ class _ProjectPageState extends State<ProjectPage> {
                         return const Center(child: Text("Belum ada data proyek."));
                       }
 
-                      // 3. LOGIC FILTERING (PENCARIAN)
+                      // logika pencarian
                       final allProjects = snapshot.data!;
                       final filteredProjects = allProjects.where((project) {
                         final name = project.projectName.toLowerCase();

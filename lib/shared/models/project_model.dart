@@ -4,6 +4,7 @@ class ProjectModel {
   final String projectId;
   final String userId;
   final String surveyorName;
+  final String surveyorEmail;
   final String projectName;
   final String clientName;
   final String address;
@@ -11,7 +12,7 @@ class ProjectModel {
   final DateTime createdAt;
   final DateTime updatedAt;
   
-  // Nulla fields untuk hasil estimasi /  output
+  // Nullable fields untuk hasil estimasi /  output
   final int? workerCount;
   final int? estimatedDuration;
   final double? totalCost;
@@ -20,6 +21,7 @@ class ProjectModel {
     required this.projectId,
     required this.userId,
     required this.surveyorName,
+    required this.surveyorEmail,
     required this.projectName,
     required this.clientName,
     required this.address,
@@ -36,6 +38,7 @@ class ProjectModel {
       projectId: documentId,
       userId: data['user_id'] ?? '',
       surveyorName: data['surveyor_name'] ?? 'Surveyor',
+      surveyorEmail: data['surveyor_email'] ?? '-',
       projectName: data['project_name'] ?? 'Tanpa Nama',
       clientName: data['client_name'] ?? '-',
       address: data['address'] ?? '-',
@@ -52,6 +55,7 @@ class ProjectModel {
     return {
       'user_id': userId,
       'surveyor_name': surveyorName,
+      'surveyor_email': surveyorEmail,
       'project_name': projectName,
       'client_name': clientName,
       'address': address,

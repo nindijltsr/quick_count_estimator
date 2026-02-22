@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
 import 'shared/services/auth_service.dart';
-//import 'utils/styles.dart'; 
 import 'features/auth/auth_wrapper.dart'; 
 
 void main() async {

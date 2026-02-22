@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../shared/utils/styles.dart';
 
-// Import Halaman Anak
 import '../dashboard/user_dashboard.dart';
 import '../projects/project_page.dart';
 import '../profile/profile_page.dart';
@@ -16,11 +15,11 @@ class UserMainPage extends StatefulWidget {
 class _UserMainPageState extends State<UserMainPage> {
   int _selectedIndex = 0;
 
-  // Daftar Halaman yang akan ditampilkan
+  // Daftar Halaman 
   final List<Widget> _pages = [
-    const UserDashboard(), // Index 0
-    const ProjectPage(),   // Index 1
-    const ProfilePage(),   // Index 2
+    const UserDashboard(), 
+    const ProjectPage(),   
+    const ProfilePage(),   
   ];
 
   void _onItemTapped(int index) {
@@ -33,10 +32,8 @@ class _UserMainPageState extends State<UserMainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      // Body berubah sesuai index yang dipilih
       body: _pages[_selectedIndex],
       
-      // Navigasi tetap diam di bawah
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(

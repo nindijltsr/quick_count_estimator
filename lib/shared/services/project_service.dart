@@ -17,14 +17,17 @@ class ProjectService {
     if (user == null) throw "User not authenticated";
 
     String surveyorName = user.displayName ?? user.email ?? 'Surveyor';
+    String surveyorEmail = user.email ?? 'no-email@test.com';
 
     try {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+      QuerySnapshot userQuery = await FirebaseFirestore.instance
           .collection('users')
-          .doc(user.uid)
+          .where('email', isEqualTo: user.email)
+          .limit(1)
           .get();
-      if (userDoc.exists) {
-        Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
+
+      if (userQuery.docs.isNotEmpty) {
+        Map<String, dynamic> data = userQuery.docs.first.data() as Map<String, dynamic>;
         if (data.containsKey('name') && data['name'] != null) {
           surveyorName = data['name'];
         }
@@ -35,6 +38,7 @@ class ProjectService {
     await _projectCollection.add({
       'user_id': user.uid,
       'surveyor_name': surveyorName,
+      'surveyor_email': surveyorEmail,
       'project_name': projectName,
       'client_name': clientName,
       'address': address,

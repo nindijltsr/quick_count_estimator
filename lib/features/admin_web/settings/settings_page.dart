@@ -3,7 +3,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
-// WARNA TEMA
 const Color primaryDarkGreen = Color(0xFF0B4D3C); 
 
 class SettingsPage extends StatefulWidget {
@@ -23,12 +22,11 @@ class _SettingsPageState extends State<SettingsPage> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F9F9),
       body: SingleChildScrollView(
-        // REVISI: Padding atas dikurangi dari 40 ke 30 (biar judul naik)
         padding: const EdgeInsets.only(left: 40.0, right: 40.0, top: 30.0, bottom: 40.0), 
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- HEADER ---
+            // header
             const Text(
               "PENGATURAN",
               style: TextStyle(
@@ -43,13 +41,12 @@ class _SettingsPageState extends State<SettingsPage> {
               "Kelola profil admin dan informasi sistem",
               style: TextStyle(color: Colors.grey[500], fontSize: 14),
             ),
-            const SizedBox(height: 30), // REVISI: Jarak ke konten dikurangi dikit
+            const SizedBox(height: 30), 
 
-            // --- KONTEN UTAMA ---
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. KARTU PROFIL 
+                // card profil
                 Expanded(
                   flex: 5,
                   child: StreamBuilder<DocumentSnapshot>(
@@ -80,7 +77,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 
                 const SizedBox(width: 30),
 
-                // 2. KARTU INFO SISTEM
+                // card info sistem
                 Expanded(
                   flex: 4,
                   child: _buildSystemInfoCard(),
@@ -90,7 +87,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
             const SizedBox(height: 30),
 
-            // 3. KARTU BANTUAN
+            // card 3
             _buildSupportCard(),
           ],
         ),
@@ -98,11 +95,9 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // ===========================================================================
-  // WIDGET COMPONENTS
-  // ===========================================================================
+  // tampilan
 
-  // 1. KARTU PROFIL
+  // profil
   Widget _buildProfileCard(String name, String email, String phone, String joinedDate) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 25), 
@@ -134,7 +129,7 @@ class _SettingsPageState extends State<SettingsPage> {
           
           const SizedBox(height: 20), 
 
-          // --- AVATAR MODERN ---
+          // avatar
           Center(
             child: Column(
               children: [
@@ -173,14 +168,13 @@ class _SettingsPageState extends State<SettingsPage> {
           Divider(color: Colors.grey[200], thickness: 1),
           const SizedBox(height: 15),
 
-          // Info Detail
+          // Info 
           _buildCompactInfoRow("Nomor Telepon", phone, Icons.phone_android),
           const SizedBox(height: 12),
           _buildCompactInfoRow("Bergabung Sejak", joinedDate, Icons.date_range),
           
           const SizedBox(height: 25),
 
-          // Tombol Full
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -200,7 +194,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // Widget Baris Info
+  // card 1 info
   Widget _buildCompactInfoRow(String label, String value, IconData icon) {
     return Row(
       children: [
@@ -220,7 +214,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // 2. KARTU INFO SISTEM
+  // card 2
   Widget _buildSystemInfoCard() {
     return Container(
       padding: const EdgeInsets.all(30),
@@ -268,7 +262,7 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // 3. KARTU BANTUAN
+  // card 3
   Widget _buildSupportCard() {
     return Container(
       padding: const EdgeInsets.all(30),
@@ -292,7 +286,6 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  // Style Shadow Tebal
   BoxDecoration _mockupCardDecoration() {
     return BoxDecoration(
       color: Colors.white,
@@ -314,7 +307,7 @@ class _SettingsPageState extends State<SettingsPage> {
     return Container(height: 200, padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(8)), child: Center(child: Text(msg, style: const TextStyle(color: Colors.red))));
   }
 
-  // DIALOG EDIT
+  // dialog edit
   void _showEditProfileDialog(String currentName, String currentPhone) {
     final nameController = TextEditingController(text: currentName);
     final phoneController = TextEditingController(text: currentPhone);
