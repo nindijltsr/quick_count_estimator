@@ -86,7 +86,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
                 if (formKey.currentState!.validate()) {
                   UserModel newUser = UserModel(
                     uid: '', 
-                    email: emailController.text.trim(),
+                    email: emailController.text.trim().toLowerCase(),
                     name: nameController.text.trim(),
                     phoneNumber: phoneController.text.trim(),
                     role: selectedRole,
@@ -187,7 +187,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
                     if (formKey.currentState!.validate()) {
                       UserModel updatedUser = UserModel(
                         uid: user.uid,
-                        email: emailController.text.trim(),
+                        email: emailController.text.trim().toLowerCase(),
                         name: nameController.text.trim(),
                         phoneNumber: phoneController.text.trim(),
                         role: selectedRole,

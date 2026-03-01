@@ -22,11 +22,6 @@ class UserMainPage extends StatefulWidget {
 class _UserMainPageState extends State<UserMainPage> {
   int _selectedIndex = 0;
   StreamSubscription<QuerySnapshot>? _userSubscription; 
-  final List<Widget> _pages = [
-    const UserDashboard(), 
-    const ProjectPage(),   
-    const ProfilePage(),   
-  ];
 
   @override
   void initState() {
@@ -34,7 +29,7 @@ class _UserMainPageState extends State<UserMainPage> {
     _monitorUserStatus(); 
   }
 
-  // Ffitur check is_active real time
+  // Fitur check is_active real time
   void _monitorUserStatus() {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser == null || currentUser.email == null) return;
@@ -88,9 +83,16 @@ class _UserMainPageState extends State<UserMainPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Pindahkan List pages ke dalam build agar bisa menerima fungsi _onItemTapped
+    final List<Widget> pages = [
+      UserDashboard(onNavigate: _onItemTapped), // ✅ Melempar remot kontrol ke Dashboard
+      const ProjectPage(),   
+      const ProfilePage(),   
+    ];
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      body: _pages[_selectedIndex],
+      body: pages[_selectedIndex],
       
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
