@@ -68,14 +68,12 @@ class UserDashboard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // =========================
-            // HEADER HIJAU (Sudah dibuat lebih fit/ramping)
-            // =========================
+            // header
             Container(
               width: double.infinity,
               padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + 10, // ✅ Dikurangi agar tidak terlalu ke bawah
-                bottom: 15, // ✅ Dikurangi agar tidak terlalu lebar ke bawah
+                top: MediaQuery.of(context).padding.top + 10, 
+                bottom: 15, 
                 left: 20, 
                 right: 10
               ),
@@ -108,13 +106,12 @@ class UserDashboard extends StatelessWidget {
             ),
 
             Padding(
-              padding: const EdgeInsets.all(20.0), // Padding utama body
+              padding: const EdgeInsets.all(20.0), 
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // =========================
-                  // SAPAAN PENGGUNA
-                  // =========================
+
+                  // sapaan atas
                   StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('users')
@@ -151,9 +148,7 @@ class UserDashboard extends StatelessWidget {
 
                   const SizedBox(height: 25),
 
-                  // =========================
-                  // CARD TOTAL PROYEK & AKSI
-                  // =========================
+                  // card total proyek n aksi 
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(20),
@@ -225,11 +220,10 @@ class UserDashboard extends StatelessWidget {
                     ),
                   ),
 
-                  const SizedBox(height: 25), // Sedikit dikurangi agar lebih hemat tempat
+                  const SizedBox(height: 25), 
 
-                  // =========================
-                  // RECENT PROJECTS (Maksimal 2 Estimasi Terakhir)
-                  // =========================
+
+                  // max 2 estimasi terakhir
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -244,13 +238,13 @@ class UserDashboard extends StatelessWidget {
                     ],
                   ),
 
-                  // List Proyek Terakhir (Limit 2)
+                  // list last proyek
                   StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
                         .collection('projects')
                         .where('user_id', isEqualTo: currentUser.uid)
                         .orderBy('updated_at', descending: true)
-                        .limit(2) // ✅ DIUBAH MENJADI 2
+                        .limit(2) 
                         .snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
@@ -286,7 +280,6 @@ class UserDashboard extends StatelessWidget {
     );
   }
 
-  // Desain Mini Card
   Widget _buildMiniProjectCard(String title, String client) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),

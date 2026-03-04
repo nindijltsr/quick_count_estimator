@@ -30,16 +30,15 @@ class _SettingsPageState extends State<SettingsPage> {
             const Text(
               "PENGATURAN",
               style: TextStyle(
-                fontSize: 28, 
-                fontWeight: FontWeight.w800,
+                fontSize: 24, 
+                fontWeight: FontWeight.bold,
                 letterSpacing: 1.2,
-                color: Colors.black87,
               ),
             ),
             const SizedBox(height: 5),
             Text(
               "Kelola profil admin dan informasi sistem",
-              style: TextStyle(color: Colors.grey[500], fontSize: 14),
+              style: TextStyle(color: Colors.grey, fontSize: 13),
             ),
             const SizedBox(height: 30), 
 
@@ -96,7 +95,6 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   // tampilan
-
   // profil
   Widget _buildProfileCard(String name, String email, String phone, String joinedDate) {
     return Container(

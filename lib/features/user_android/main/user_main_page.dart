@@ -44,7 +44,7 @@ class _UserMainPageState extends State<UserMainPage> {
         final userData = snapshot.docs.first.data();
         final isActive = userData['is_active'] ?? true;
 
-        // jika akun nonaktif
+        // if akun nonaktif
         if (!isActive) {
           _userSubscription?.cancel();
           await context.read<AuthService>().logout();
@@ -83,9 +83,8 @@ class _UserMainPageState extends State<UserMainPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Pindahkan List pages ke dalam build agar bisa menerima fungsi _onItemTapped
     final List<Widget> pages = [
-      UserDashboard(onNavigate: _onItemTapped), // ✅ Melempar remot kontrol ke Dashboard
+      UserDashboard(onNavigate: _onItemTapped), 
       const ProjectPage(),   
       const ProfilePage(),   
     ];

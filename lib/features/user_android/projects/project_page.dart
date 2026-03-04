@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../shared/utils/styles.dart';
 import '../../../shared/models/project_model.dart';
 import '../../../shared/services/project_service.dart';
+import 'project_estimation_page.dart';
 
 class ProjectPage extends StatefulWidget {
   const ProjectPage({super.key});
@@ -271,10 +272,7 @@ class _ProjectPageState extends State<ProjectPage> {
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border(
-          bottom: BorderSide(
-            color: Colors.grey[200]!, 
-            width: 1.0,
-          ),
+          bottom: BorderSide(color: Colors.grey[200]!, width: 1.0),
         ),
       ),
       child: Column(
@@ -296,9 +294,14 @@ class _ProjectPageState extends State<ProjectPage> {
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Fitur Hitung Estimasi segera hadir!"),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProjectEstimationPage(
+                          projectId: project.projectId,
+                          projectName: project.projectName,
+                          clientName: project.clientName,
+                        ),
                       ),
                     );
                   },
@@ -307,15 +310,15 @@ class _ProjectPageState extends State<ProjectPage> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppStyles.primaryGreen,
                     foregroundColor: Colors.white,
-                    elevation: 0, 
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
-                    ), 
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
               ),
-              const SizedBox(width: 16), 
+              const SizedBox(width: 16),
               InkWell(
                 onTap: () => _showProjectForm(project: project),
                 child: const Icon(

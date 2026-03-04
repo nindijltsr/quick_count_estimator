@@ -235,98 +235,131 @@ class _UserManagementPageState extends State<UserManagementPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Scaffold(
+      backgroundColor: Colors.transparent, 
+      body: Padding(
+        padding: const EdgeInsets.all(30.0), 
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            // header + btn tambah
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('MANAJEMEN AKUN', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                Text('Kelola Akun Pengguna (Whitelist)', style: TextStyle(color: Colors.grey)),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('MANAJEMEN AKUN', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
+                    Text('Kelola Akun Pengguna (Whitelist)', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  ],
+                ),
+                ElevatedButton.icon(
+                  onPressed: _showAddUserDialog,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('Tambah Pengguna'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppStyles.primaryGreen, 
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
               ],
             ),
-            ElevatedButton.icon(
-              onPressed: _showAddUserDialog,
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('Tambah Pengguna'),
-              style: ElevatedButton.styleFrom(backgroundColor: AppStyles.primaryGreen, foregroundColor: Colors.white),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Expanded(
-          child: Card(
-            color: Colors.white,
-            elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  TextField(
-                    controller: _searchController,
-                    onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
-                    decoration: InputDecoration(
-                      hintText: 'Cari nama atau email...',
-                      prefixIcon: const Icon(Icons.search),
-                      filled: true,
-                      fillColor: Colors.grey[100],
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-                    ),
+            const SizedBox(height: 30),
+
+            // search bar
+            SizedBox(
+              width: 400,
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
+                decoration: InputDecoration(
+                  hintText: 'Cari nama atau email...',
+                  hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+                  prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey[500]),
+                  filled: true,
+                  fillColor: Colors.grey[200],
+                  hoverColor: Colors.transparent,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
                   ),
-                  const SizedBox(height: 10),
-                  
-                  // area tabel
-                  Expanded(
-                    child: StreamBuilder<List<UserModel>>(
-                      stream: _userService.getUsers(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-                        if (!snapshot.hasData || snapshot.data!.isEmpty) return const Center(child: Text("Belum ada data pengguna."));
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
 
-                        final users = snapshot.data!.where((user) {
-                          return user.name.toLowerCase().contains(_searchQuery) || user.email.toLowerCase().contains(_searchQuery);
-                        }).toList();
+            // tabel dinamis
+            Expanded(
+              child: StreamBuilder<List<UserModel>>(
+                stream: _userService.getUsers(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) return const Center(child: Text("Belum ada data pengguna."));
 
-                        return Scrollbar(
+                  final users = snapshot.data!.where((user) {
+                    return user.name.toLowerCase().contains(_searchQuery) || user.email.toLowerCase().contains(_searchQuery);
+                  }).toList();
+
+                  return Align(
+                    alignment: Alignment.topCenter, 
+                    child: Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: [
+                          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10),
+                        ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(15),
+                        child: Scrollbar(
                           thumbVisibility: true,
                           child: SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
+                            scrollDirection: Axis.vertical, 
                             child: SingleChildScrollView(
-                              scrollDirection: Axis.vertical,
+                              scrollDirection: Axis.horizontal, 
                               child: ConstrainedBox(
                                 constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width - 350),
                                 child: DataTable(
-                                  headingRowColor: WidgetStateProperty.all(Colors.grey[200]),
+                                  headingRowColor: WidgetStateProperty.all(const Color(0xFFE3EAE6)), 
                                   columnSpacing: 20,
                                   columns: const [
-                                    DataColumn(label: Text('No')),
-                                    DataColumn(label: Text('Nama Lengkap')),
-                                    DataColumn(label: Text('Email')),
-                                    DataColumn(label: Text('No. HP')),
-                                    DataColumn(label: Text('Jabatan')),
-                                    DataColumn(label: Text('Tanggal Dibuat')), // kolom baru
-                                    DataColumn(label: Text('Status')),
-                                    DataColumn(label: Text('Aksi')),
+                                    DataColumn(label: Text('No', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text('Nama Lengkap', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text('Email', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text('No. HP', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text('Jabatan', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text('Tanggal Dibuat', style: TextStyle(fontWeight: FontWeight.bold))), 
+                                    DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text('Aksi', style: TextStyle(fontWeight: FontWeight.bold))),
                                   ],
                                   rows: List.generate(users.length, (index) => _buildRow(index + 1, users[index])),
                                 ),
                               ),
                             ),
                           ),
-                        );
-                      },
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -342,18 +375,18 @@ class _UserManagementPageState extends State<UserManagementPage> {
       DataCell(Text(user.phoneNumber)),
       DataCell(
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(color: user.role == 'admin' ? Colors.blue[50] : Colors.purple[50], borderRadius: BorderRadius.circular(4)),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(color: user.role == 'admin' ? Colors.blue[50] : Colors.purple[50], borderRadius: BorderRadius.circular(6)),
           child: Text(user.role.toUpperCase(), style: TextStyle(color: user.role == 'admin' ? Colors.blue : Colors.purple, fontSize: 11, fontWeight: FontWeight.bold)),
         )
       ),
-      DataCell(Text(_formatDate(user.createdAt))), // isi tanggal
+      DataCell(Text(_formatDate(user.createdAt))), 
       DataCell(
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: user.isActive ? Colors.green[50] : Colors.red[50],
-            borderRadius: BorderRadius.circular(4),
+            borderRadius: BorderRadius.circular(6),
           ),
           child: Text(
             user.isActive ? 'Aktif' : 'Non-aktif',
@@ -367,8 +400,8 @@ class _UserManagementPageState extends State<UserManagementPage> {
         : Row(
             mainAxisSize: MainAxisSize.min, 
             children: [
-              IconButton(icon: const Icon(Icons.edit, color: Colors.blue), onPressed: () => _showEditUserDialog(user)),
-              IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _confirmDelete(user.uid, user.name)),
+              IconButton(icon: const Icon(Icons.edit_outlined, color: Colors.blue), onPressed: () => _showEditUserDialog(user)),
+              IconButton(icon: const Icon(Icons.delete_outline, color: Colors.red), onPressed: () => _confirmDelete(user.uid, user.name)),
             ],
           )
       ),
