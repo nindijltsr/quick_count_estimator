@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'forms/persiapan_tanah_pondasi.dart';
+import 'forms/struktur_dan_dinding.dart';
+import 'forms/lantai_dan_timbunan.dart';
+import 'forms/pintu_jendela_pengunci.dart';
+import 'forms/atap_dan_plafon.dart';
+import 'forms/finishing.dart';
 
 class ProjectEstimationPage extends StatelessWidget {
   final String projectId;
@@ -14,9 +20,22 @@ class ProjectEstimationPage extends StatelessWidget {
 
   // notif saat menu pekerjaan di klik
   void _showDevelopmentMessage(BuildContext context, String featureName) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text("Fitur '$featureName' akan segera hadir."),
+        content: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: Text("Fitur '$featureName' akan segera hadir.")),
+            GestureDetector(
+              onTap: () {
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              },
+              child: const Icon(Icons.close, color: Colors.white, size: 18),
+            ),
+          ],
+        ),
         backgroundColor: Colors.orange[800],
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
@@ -40,7 +59,11 @@ class ProjectEstimationPage extends StatelessWidget {
           children: [
             Text(
               projectName,
-              style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18),
+              style: const TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
             ),
             Text(
               "Klien : $clientName",
@@ -54,17 +77,115 @@ class ProjectEstimationPage extends StatelessWidget {
         child: Column(
           children: [
             // list card pekerjaan a-f
-            _buildTaskCard(context, "Pekerjaan Persiapan, Tanah & Fondasi", "Input dimensi lahan dan galian", Icons.landscape, Colors.brown, Colors.brown[50]!),
-            _buildTaskCard(context, "Pekerjaan Struktur dan Dinding", "Input volume beton dan bata", Icons.foundation, Colors.blueGrey, Colors.blueGrey[50]!),
-            _buildTaskCard(context, "Pekerjaan Lantai dan Timbunan", "Input luasan lantai dan urugan", Icons.grid_on, Colors.teal, Colors.teal[50]!),
-            _buildTaskCard(context, "Pekerjaan Pintu, Jendela & Pengunci", "Input jumlah kusen dan daun pintu", Icons.door_front_door, Colors.orange, Colors.orange[50]!),
-            _buildTaskCard(context, "Pekerjaan Atap dan Plafon", "Input luasan rangka dan penutup atap", Icons.roofing, Colors.red, Colors.red[50]!),
-            _buildTaskCard(context, "Pekerjaan Finishing", "Pengecatan dan titik instalasi listrik", Icons.format_paint, Colors.purple, Colors.purple[50]!),
-            
+            _buildTaskCard(
+              context: context,
+              title: "Pekerjaan Persiapan, Tanah & Fondasi",
+              subtitle: "Input dimensi lahan dan galian",
+              icon: Icons.landscape,
+              iconColor: Colors.brown,
+              bgColor: Colors.brown[50]!,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PersiapanTanahPondasiPage(),
+                  ),
+                );
+              },
+            ),
+            _buildTaskCard(
+              context: context,
+              title: "Pekerjaan Struktur dan Dinding",
+              subtitle: "Input volume beton dan bata",
+              icon: Icons.foundation,
+              iconColor: Colors.blueGrey,
+              bgColor: Colors.blueGrey[50]!,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const StrukturDanDindingPage(),
+                  ),
+                );
+              },
+            ),
+            _buildTaskCard(
+              context: context,
+              title: "Pekerjaan Lantai dan Timbunan",
+              subtitle: "Input luasan lantai dan urugan",
+              icon: Icons.grid_on,
+              iconColor: Colors.teal,
+              bgColor: Colors.teal[50]!,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LantaiDanTimbunanPage(),
+                  ),
+                );
+              },
+            ),
+            _buildTaskCard(
+              context: context,
+              title: "Pekerjaan Pintu, Jendela & Pengunci",
+              subtitle: "Input jumlah kusen dan daun pintu",
+              icon: Icons.door_front_door,
+              iconColor: Colors.orange,
+              bgColor: Colors.orange[50]!,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PintuJendelaPengunciPage(),
+                  ),
+                );
+              },
+            ),
+            _buildTaskCard(
+              context: context,
+              title: "Pekerjaan Atap dan Plafon",
+              subtitle: "Input luasan rangka dan penutup atap",
+              icon: Icons.roofing,
+              iconColor: Colors.red,
+              bgColor: Colors.red[50]!,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AtapDanPlafonPage(),
+                  ),
+                );
+              },
+            ),
+            _buildTaskCard(
+              context: context,
+              title: "Pekerjaan Finishing",
+              subtitle: "Pengecatan dan titik instalasi listrik",
+              icon: Icons.format_paint,
+              iconColor: Colors.purple,
+              bgColor: Colors.purple[50]!,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const FinishingPage(),
+                  ),
+                );
+              },
+            ),
+
             const Divider(height: 30, thickness: 1),
-            
+
             // card prediksi upah pekerja
-            _buildTaskCard(context, "Prediksi Pekerja", "Analisa durasi dan upah tukang", Icons.engineering, Colors.indigo, Colors.indigo[50]!),
+            _buildTaskCard(
+              context: context,
+              title: "Prediksi Pekerja",
+              subtitle: "Analisa durasi dan upah tukang",
+              icon: Icons.engineering,
+              iconColor: Colors.indigo,
+              bgColor: Colors.indigo[50]!,
+              onTap: () => _showDevelopmentMessage(context, "Prediksi Pekerja"),
+            ),
 
             const SizedBox(height: 30),
 
@@ -73,7 +194,7 @@ class ProjectEstimationPage extends StatelessWidget {
               context: context,
               label: "Cek Bahan",
               icon: Icons.inventory_2,
-              color: const Color(0xFFF0B86E), 
+              color: const Color(0xFFF0B86E),
               onPressed: () => _showDevelopmentMessage(context, "Cek Bahan"),
             ),
             const SizedBox(height: 12),
@@ -81,15 +202,16 @@ class ProjectEstimationPage extends StatelessWidget {
               context: context,
               label: "Lihat Hasil Analisa",
               icon: Icons.analytics_outlined,
-              color: const Color(0xFF8B78E6), 
-              onPressed: () => _showDevelopmentMessage(context, "Lihat Hasil Analisa"),
+              color: const Color(0xFF8B78E6),
+              onPressed: () =>
+                  _showDevelopmentMessage(context, "Lihat Hasil Analisa"),
             ),
             const SizedBox(height: 12),
             _buildActionButton(
               context: context,
               label: "Kembali Ke Daftar Proyek",
               icon: Icons.arrow_back,
-              color: Colors.grey[400]!, 
+              color: Colors.grey[400]!,
               onPressed: () => Navigator.pop(context),
             ),
             const SizedBox(height: 20),
@@ -100,15 +222,27 @@ class ProjectEstimationPage extends StatelessWidget {
   }
 
   // ui card pekerjaan
-  Widget _buildTaskCard(BuildContext context, String title, String subtitle, IconData icon, Color iconColor, Color bgColor) {
+  Widget _buildTaskCard({
+    required BuildContext context,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color iconColor,
+    required Color bgColor,
+    required VoidCallback onTap,
+  }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!), // Saya haluskan sedikit bordernya jadi 200 biar lebih nyatu dengan warna pastel
+        border: Border.all(color: Colors.grey[200]!),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 4, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: ListTile(
@@ -116,20 +250,26 @@ class ProjectEstimationPage extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: bgColor, 
+            color: bgColor,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, color: iconColor, size: 28), 
+          child: Icon(icon, color: iconColor, size: 28),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text(subtitle, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        trailing: const Icon(Icons.chevron_right, color: Colors.grey), 
-        onTap: () => _showDevelopmentMessage(context, "Form $title"),
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
+        ),
+        trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+        onTap: onTap,
       ),
     );
   }
 
-  // ui btn bawah 
+  // ui btn bawah
   Widget _buildActionButton({
     required BuildContext context,
     required String label,
@@ -145,7 +285,11 @@ class ProjectEstimationPage extends StatelessWidget {
         icon: Icon(icon, color: Colors.white),
         label: Text(
           label,
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
         ),
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
