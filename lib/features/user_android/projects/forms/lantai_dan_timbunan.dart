@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'pintu_jendela_pengunci.dart'; 
+import '../project_estimation_page.dart'; 
 
 import '../../../../shared/utils/styles.dart'; 
 
 class LantaiDanTimbunanPage extends StatefulWidget {
-  const LantaiDanTimbunanPage({super.key});
+  final String projectId;
+  final String projectName;
+  final String clientName;
+
+  const LantaiDanTimbunanPage({
+    super.key,
+    required this.projectId,
+    required this.projectName,
+    required this.clientName,
+  });
 
   @override
   State<LantaiDanTimbunanPage> createState() => _LantaiDanTimbunanPageState();
@@ -31,7 +42,7 @@ class _LantaiDanTimbunanPageState extends State<LantaiDanTimbunanPage> {
         elevation: 1,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context), 
         ),
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,7 +98,6 @@ class _LantaiDanTimbunanPageState extends State<LantaiDanTimbunanPage> {
 
               const SizedBox(height: 10),
 
-              // btn
               // btn simpan
               SizedBox(
                 width: double.infinity,
@@ -129,10 +139,13 @@ class _LantaiDanTimbunanPageState extends State<LantaiDanTimbunanPage> {
                 height: 48,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          "Menuju Form Pintu, Jendela & Pengunci... (Segera Hadir)",
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PintuJendelaPengunciPage( 
+                          projectId: widget.projectId,
+                          projectName: widget.projectName,
+                          clientName: widget.clientName,
                         ),
                       ),
                     );
@@ -164,16 +177,29 @@ class _LantaiDanTimbunanPageState extends State<LantaiDanTimbunanPage> {
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton.icon(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProjectEstimationPage(
+                                projectId: widget.projectId,
+                                projectName: widget.projectName,
+                                clientName: widget.clientName,
+                              ),
+                            ),
+                            (route) => route.isFirst,
+                          );
+                        },
                         icon: Icon(
                           Icons.home_outlined,
                           color: Colors.grey[700],
                         ),
                         label: Text(
-                          "Kembali",
+                          "Menu Estimasi",
                           style: TextStyle(
                             color: Colors.grey[700],
                             fontWeight: FontWeight.bold,
+                            fontSize: 13,
                           ),
                         ),
                         style: ElevatedButton.styleFrom(

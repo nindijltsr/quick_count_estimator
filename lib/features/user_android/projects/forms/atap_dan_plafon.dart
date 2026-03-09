@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'finishing.dart';
+import '../project_estimation_page.dart';
+
 import '../../../../shared/utils/styles.dart';
 
 class AtapDanPlafonPage extends StatefulWidget {
-  const AtapDanPlafonPage({super.key});
+  final String projectId;
+  final String projectName;
+  final String clientName;
+
+  const AtapDanPlafonPage({
+    super.key,
+    required this.projectId,
+    required this.projectName,
+    required this.clientName,
+  });
 
   @override
   State<AtapDanPlafonPage> createState() => _AtapDanPlafonPageState();
@@ -118,11 +130,18 @@ class _AtapDanPlafonPageState extends State<AtapDanPlafonPage> {
                 width: double.infinity,
                 height: 48,
                 child: ElevatedButton.icon(
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Menuju Form Finishing... (Segera Hadir)"),
-                    ),
-                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => FinishingPage( 
+                          projectId: widget.projectId,
+                          projectName: widget.projectName,
+                          clientName: widget.clientName,
+                        ),
+                      ),
+                    );
+                  },
                   icon: const Icon(Icons.chevron_right, color: Colors.white),
                   label: const Text(
                     "Lanjut Ke Pekerjaan Finishing",
@@ -149,16 +168,29 @@ class _AtapDanPlafonPageState extends State<AtapDanPlafonPage> {
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton.icon(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProjectEstimationPage(
+                                projectId: widget.projectId,       
+                                projectName: widget.projectName,   
+                                clientName: widget.clientName,     
+                              ),
+                            ),
+                            (route) => route.isFirst,
+                          );
+                        },
                         icon: Icon(
                           Icons.home_outlined,
                           color: Colors.grey[700],
                         ),
                         label: Text(
-                          "Kembali",
+                          "Menu Estimasi",
                           style: TextStyle(
                             color: Colors.grey[700],
                             fontWeight: FontWeight.bold,
+                            fontSize: 13, 
                           ),
                         ),
                         style: ElevatedButton.styleFrom(

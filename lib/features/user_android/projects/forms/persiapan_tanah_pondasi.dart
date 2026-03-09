@@ -1,17 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'struktur_dan_dinding.dart'; 
+import '../project_estimation_page.dart'; 
 
 import '../../../../shared/utils/styles.dart';
 
-class PersiapanTanahPondasiPage extends StatefulWidget {
-  const PersiapanTanahPondasiPage({super.key});
+class PersiapanTanahFondasiPage extends StatefulWidget {
+  final String projectId;
+  final String projectName;
+  final String clientName;
+
+  const PersiapanTanahFondasiPage({
+    super.key,
+    required this.projectId,
+    required this.projectName,
+    required this.clientName,
+  });
 
   @override
-  State<PersiapanTanahPondasiPage> createState() =>
-      _PersiapanTanahPondasiPageState();
+  State<PersiapanTanahFondasiPage> createState() => _PersiapanTanahFondasiPageState();
 }
 
-class _PersiapanTanahPondasiPageState extends State<PersiapanTanahPondasiPage> {
+class _PersiapanTanahFondasiPageState extends State<PersiapanTanahFondasiPage> {
   // variabel controller
   final _landLengthCtrl = TextEditingController();
   final _landWidthCtrl = TextEditingController();
@@ -36,7 +46,7 @@ class _PersiapanTanahPondasiPageState extends State<PersiapanTanahPondasiPage> {
         elevation: 1,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context), 
         ),
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -74,7 +84,6 @@ class _PersiapanTanahPondasiPageState extends State<PersiapanTanahPondasiPage> {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-
             children: [
               // field inputan
               _buildInputField(
@@ -104,7 +113,6 @@ class _PersiapanTanahPondasiPageState extends State<PersiapanTanahPondasiPage> {
 
               const SizedBox(height: 10),
 
-              // btn
               // btn simpan
               SizedBox(
                 width: double.infinity,
@@ -144,10 +152,13 @@ class _PersiapanTanahPondasiPageState extends State<PersiapanTanahPondasiPage> {
                 height: 48,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          "Menuju Form Dinding & Struktur... (Segera Hadir)",
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => StrukturDanDindingPage(
+                          projectId: widget.projectId,
+                          projectName: widget.projectName,
+                          clientName: widget.clientName,
                         ),
                       ),
                     );
@@ -179,16 +190,29 @@ class _PersiapanTanahPondasiPageState extends State<PersiapanTanahPondasiPage> {
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton.icon(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProjectEstimationPage(
+                                projectId: widget.projectId,
+                                projectName: widget.projectName,
+                                clientName: widget.clientName,
+                              ),
+                            ),
+                            (route) => route.isFirst,
+                          );
+                        },
                         icon: Icon(
                           Icons.home_outlined,
                           color: Colors.grey[700],
                         ),
                         label: Text(
-                          "Kembali",
+                          "Menu Estimasi",
                           style: TextStyle(
                             color: Colors.grey[700],
                             fontWeight: FontWeight.bold,
+                            fontSize: 13, 
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
@@ -207,7 +231,6 @@ class _PersiapanTanahPondasiPageState extends State<PersiapanTanahPondasiPage> {
                       height: 48,
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          // logik reset
                           _landLengthCtrl.clear();
                           _landWidthCtrl.clear();
                           _foundationLengthCtrl.clear();
@@ -269,11 +292,10 @@ class _PersiapanTanahPondasiPageState extends State<PersiapanTanahPondasiPage> {
                 ? [
                     FilteringTextInputFormatter.allow(
                       RegExp(r'^\d*\.?\d*'),
-                    ), 
+                    ),
                   ]
                 : [
-                    FilteringTextInputFormatter
-                        .digitsOnly, 
+                    FilteringTextInputFormatter.digitsOnly,
                   ],
             decoration: InputDecoration(
               hintText: hint,

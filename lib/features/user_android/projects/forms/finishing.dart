@@ -1,9 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../project_estimation_page.dart';
+
 import '../../../../shared/utils/styles.dart';
 
 class FinishingPage extends StatefulWidget {
-  const FinishingPage({super.key});
+  final String projectId;
+  final String projectName;
+  final String clientName;
+
+  const FinishingPage({
+    super.key,
+    required this.projectId,
+    required this.projectName,
+    required this.clientName,
+  });
 
   @override
   State<FinishingPage> createState() => _FinishingPageState();
@@ -167,16 +178,29 @@ class _FinishingPageState extends State<FinishingPage> {
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton.icon(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProjectEstimationPage(
+                                projectId: widget.projectId,
+                                projectName: widget.projectName,
+                                clientName: widget.clientName,
+                              ),
+                            ),
+                            (route) => route.isFirst,
+                          );
+                        },
                         icon: Icon(
                           Icons.home_outlined,
                           color: Colors.grey[700],
                         ),
                         label: Text(
-                          "Kembali",
+                          "Menu Estimasi",
                           style: TextStyle(
                             color: Colors.grey[700],
                             fontWeight: FontWeight.bold,
+                            fontSize: 13,
                           ),
                         ),
                         style: ElevatedButton.styleFrom(

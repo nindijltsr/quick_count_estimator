@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'forms/persiapan_tanah_pondasi.dart';
+import 'forms/persiapan_tanah_pondasi.dart'; 
 import 'forms/struktur_dan_dinding.dart';
 import 'forms/lantai_dan_timbunan.dart';
 import 'forms/pintu_jendela_pengunci.dart';
@@ -18,7 +18,7 @@ class ProjectEstimationPage extends StatelessWidget {
     required this.clientName,
   });
 
-  // notif saat menu pekerjaan di klik
+  // notif saat menu yang belum dikerjakan di klik
   void _showDevelopmentMessage(BuildContext context, String featureName) {
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
@@ -76,7 +76,7 @@ class ProjectEstimationPage extends StatelessWidget {
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            // list card pekerjaan a-f
+            // 1. Pekerjaan Persiapan, Tanah & Fondasi
             _buildTaskCard(
               context: context,
               title: "Pekerjaan Persiapan, Tanah & Fondasi",
@@ -88,11 +88,17 @@ class ProjectEstimationPage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const PersiapanTanahPondasiPage(),
+                    builder: (context) => PersiapanTanahFondasiPage( 
+                      projectId: projectId,
+                      projectName: projectName,
+                      clientName: clientName,
+                    ),
                   ),
                 );
               },
             ),
+            
+            // 2. Pekerjaan Struktur dan Dinding
             _buildTaskCard(
               context: context,
               title: "Pekerjaan Struktur dan Dinding",
@@ -104,11 +110,17 @@ class ProjectEstimationPage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const StrukturDanDindingPage(),
-                  ),
+                    builder: (context) => StrukturDanDindingPage(
+                      projectId: projectId,
+                      projectName: projectName,
+                      clientName: clientName,
+                    ),
+                  ), 
                 );
               },
             ),
+            
+            // 3. Pekerjaan Lantai dan Timbunan
             _buildTaskCard(
               context: context,
               title: "Pekerjaan Lantai dan Timbunan",
@@ -120,11 +132,17 @@ class ProjectEstimationPage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const LantaiDanTimbunanPage(),
+                    builder: (context) => LantaiDanTimbunanPage(
+                      projectId: projectId,
+                      projectName: projectName,
+                      clientName: clientName,
+                    ),
                   ),
                 );
               },
             ),
+            
+            // 4. Pekerjaan Pintu, Jendela & Pengunci
             _buildTaskCard(
               context: context,
               title: "Pekerjaan Pintu, Jendela & Pengunci",
@@ -136,11 +154,17 @@ class ProjectEstimationPage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const PintuJendelaPengunciPage(),
+                    builder: (context) => PintuJendelaPengunciPage(
+                      projectId: projectId,
+                      projectName: projectName,
+                      clientName: clientName,
+                    ),
                   ),
                 );
               },
             ),
+            
+            // 5. Pekerjaan Atap dan Plafon
             _buildTaskCard(
               context: context,
               title: "Pekerjaan Atap dan Plafon",
@@ -152,11 +176,17 @@ class ProjectEstimationPage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const AtapDanPlafonPage(),
+                    builder: (context) => AtapDanPlafonPage(
+                      projectId: projectId,
+                      projectName: projectName,
+                      clientName: clientName,
+                    ),
                   ),
                 );
               },
             ),
+            
+            // 6. Pekerjaan Finishing
             _buildTaskCard(
               context: context,
               title: "Pekerjaan Finishing",
@@ -168,7 +198,11 @@ class ProjectEstimationPage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const FinishingPage(),
+                    builder: (context) => FinishingPage(
+                      projectId: projectId,
+                      projectName: projectName,
+                      clientName: clientName,
+                    ),
                   ),
                 );
               },

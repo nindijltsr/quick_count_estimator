@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'atap_dan_plafon.dart'; 
+import '../project_estimation_page.dart';
 
 import '../../../../shared/utils/styles.dart'; 
 
 class PintuJendelaPengunciPage extends StatefulWidget {
-  const PintuJendelaPengunciPage({super.key});
+  final String projectId;
+  final String projectName;
+  final String clientName;
+
+  const PintuJendelaPengunciPage({
+    super.key,
+    required this.projectId,
+    required this.projectName,
+    required this.clientName,
+  });
 
   @override
   State<PintuJendelaPengunciPage> createState() => _PintuJendelaPengunciPageState();
@@ -87,7 +98,6 @@ class _PintuJendelaPengunciPageState extends State<PintuJendelaPengunciPage> {
 
               const SizedBox(height: 10),
 
-              // btn
               // btn simpan
               SizedBox(
                 width: double.infinity,
@@ -129,10 +139,13 @@ class _PintuJendelaPengunciPageState extends State<PintuJendelaPengunciPage> {
                 height: 48,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          "Menuju Form Atap dan Plafon... (Segera Hadir)",
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AtapDanPlafonPage(
+                          projectId: widget.projectId,
+                          projectName: widget.projectName,
+                          clientName: widget.clientName,
                         ),
                       ),
                     );
@@ -164,16 +177,29 @@ class _PintuJendelaPengunciPageState extends State<PintuJendelaPengunciPage> {
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton.icon(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProjectEstimationPage(
+                                projectId: widget.projectId,
+                                projectName: widget.projectName,
+                                clientName: widget.clientName,
+                              ),
+                            ),
+                            (route) => route.isFirst,
+                          );
+                        },
                         icon: Icon(
                           Icons.home_outlined,
                           color: Colors.grey[700],
                         ),
                         label: Text(
-                          "Kembali",
+                          "Menu Estimasi",
                           style: TextStyle(
                             color: Colors.grey[700],
                             fontWeight: FontWeight.bold,
+                            fontSize: 13,
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
@@ -192,7 +218,6 @@ class _PintuJendelaPengunciPageState extends State<PintuJendelaPengunciPage> {
                       height: 48,
                       child: ElevatedButton.icon(
                         onPressed: () {
-
                           // logika reset
                           _doorCountCtrl.clear();
                           _windowCountCtrl.clear();

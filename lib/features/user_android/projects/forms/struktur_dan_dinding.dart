@@ -1,10 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'lantai_dan_timbunan.dart';
+import '../project_estimation_page.dart'; 
 
 import '../../../../shared/utils/styles.dart'; 
 
 class StrukturDanDindingPage extends StatefulWidget {
-  const StrukturDanDindingPage({super.key});
+  final String projectId;
+  final String projectName;
+  final String clientName;
+
+  const StrukturDanDindingPage({
+    super.key,
+    required this.projectId,
+    required this.projectName,
+    required this.clientName,
+  });
 
   @override
   State<StrukturDanDindingPage> createState() => _StrukturDanDindingPageState();
@@ -31,7 +42,7 @@ class _StrukturDanDindingPageState extends State<StrukturDanDindingPage> {
         elevation: 1,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context), 
         ),
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,8 +98,7 @@ class _StrukturDanDindingPageState extends State<StrukturDanDindingPage> {
 
               const SizedBox(height: 10),
 
-              // btn
-              //btn simpan
+              // btn simpan
               SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -129,10 +139,13 @@ class _StrukturDanDindingPageState extends State<StrukturDanDindingPage> {
                 height: 48,
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          "Menuju Form Lantai dan Timbunan... (Segera Hadir)",
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => LantaiDanTimbunanPage( 
+                          projectId: widget.projectId,
+                          projectName: widget.projectName,
+                          clientName: widget.clientName,
                         ),
                       ),
                     );
@@ -164,16 +177,29 @@ class _StrukturDanDindingPageState extends State<StrukturDanDindingPage> {
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton.icon(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: () {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProjectEstimationPage(
+                                projectId: widget.projectId,
+                                projectName: widget.projectName,
+                                clientName: widget.clientName,
+                              ),
+                            ),
+                            (route) => route.isFirst,
+                          );
+                        },
                         icon: Icon(
                           Icons.home_outlined,
                           color: Colors.grey[700],
                         ),
                         label: Text(
-                          "Kembali",
+                          "Menu Estimasi",
                           style: TextStyle(
                             color: Colors.grey[700],
                             fontWeight: FontWeight.bold,
+                            fontSize: 13,
                           ),
                         ),
                         style: ElevatedButton.styleFrom(
@@ -255,8 +281,7 @@ class _StrukturDanDindingPageState extends State<StrukturDanDindingPage> {
                     ),
                   ]
                 : [
-                    FilteringTextInputFormatter
-                        .digitsOnly,
+                    FilteringTextInputFormatter.digitsOnly,
                   ],
             decoration: InputDecoration(
               hintText: hint,
