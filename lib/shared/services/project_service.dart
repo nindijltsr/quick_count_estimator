@@ -33,6 +33,7 @@ class ProjectService {
         }
       }
     } catch (e) {
+      // Error handling atau log - soon
     }
 
     await _projectCollection.add({
@@ -92,7 +93,32 @@ class ProjectService {
     });
   }
 
+  /// Menghapus proyek utama beserta seluruh sub-collection di dalamnya
   Future<void> deleteProject(String projectId) async {
-    await _projectCollection.doc(projectId).delete();
+    final batch = FirebaseFirestore.instance.batch();
+    final projectRef = _projectCollection.doc(projectId);
+
+    try {
+      batch.delete(projectRef.collection('inputUser').doc('data'));
+
+      final hasilMenuDocs = [
+        'persiapan_tanah_pondasi',
+        'struktur_dan_dinding',
+        'lantai_dan_timbunan',
+        'pintu_jendela_pengunci',
+        'atap_dan_plafon',
+        'finishing_cat_listrik',
+        'estimasi_upah'
+      ];
+      
+      for (String docName in hasilMenuDocs) {
+        batch.delete(projectRef.collection('hasil_perhitungan').doc(docName));
+      }
+      batch.delete(projectRef.collection('rekap_akhir').doc('material'));
+      batch.delete(projectRef);
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Gagal menghapus proyek beserta isinya: $e');
+    }
   }
 }

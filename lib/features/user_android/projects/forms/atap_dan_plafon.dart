@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'finishing.dart';
 import '../project_estimation_page.dart';
-
 import '../../../../shared/utils/styles.dart';
+import '../../../../shared/services/estimasi_provider.dart';
 
 class AtapDanPlafonPage extends StatefulWidget {
   final String projectId;
@@ -25,11 +28,80 @@ class _AtapDanPlafonPageState extends State<AtapDanPlafonPage> {
   final _buildingLengthCtrl = TextEditingController();
   final _buildingWidthCtrl = TextEditingController();
 
+  bool _isControllerInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _updateControllersFromProvider();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_isControllerInitialized) {
+      _updateControllersFromProvider();
+    }
+  }
+
+  void _updateControllersFromProvider() {
+    final provider = context.read<EstimasiProvider>();
+    
+    if (provider.pBangunan > 0) {
+      _buildingLengthCtrl.text = provider.pBangunan.toString();
+    }
+    if (provider.lBangunan > 0) {
+      _buildingWidthCtrl.text = provider.lBangunan.toString();
+    }
+    
+    if (provider.pBangunan > 0 || provider.lBangunan > 0) {
+      _isControllerInitialized = true;
+      debugPrint('✓ Menu E: TextEditingController diisi dengan data dari provider');
+    }
+  }
+
   @override
   void dispose() {
     _buildingLengthCtrl.dispose();
     _buildingWidthCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _onSimpan() async {
+    final provider = context.read<EstimasiProvider>();
+
+    final berhasil = await provider.simpanMenuE(
+      pBangunanStr: _buildingLengthCtrl.text,
+      lBangunanStr: _buildingWidthCtrl.text,
+    );
+
+    if (!mounted) return;
+
+    if (berhasil) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✓ Data Menu E berhasil disimpan!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(provider.pesanError),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  void _onReset() {
+    _buildingLengthCtrl.clear();
+    _buildingWidthCtrl.clear();
+    context.read<EstimasiProvider>().resetMenuE();
   }
 
   @override
@@ -47,7 +119,7 @@ class _AtapDanPlafonPageState extends State<AtapDanPlafonPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Atap dan Plafon",
+              'Atap dan Plafon',
               style: TextStyle(
                 color: Colors.black87,
                 fontWeight: FontWeight.bold,
@@ -55,11 +127,29 @@ class _AtapDanPlafonPageState extends State<AtapDanPlafonPage> {
               ),
             ),
             Text(
-              "Input luasan rangka dan penutup atap",
+              'Input luasan rangka dan penutup atap',
               style: TextStyle(color: Colors.grey, fontSize: 13),
             ),
           ],
         ),
+        actions: [
+          Consumer<EstimasiProvider>(
+            builder: (_, provider, __) {
+              if (!provider.menuESudahDisimpan) return const SizedBox();
+              return const Padding(
+                padding: EdgeInsets.only(right: 12),
+                child: Chip(
+                  label: Text(
+                    '✓ Tersimpan',
+                    style: TextStyle(fontSize: 11, color: Colors.white),
+                  ),
+                  backgroundColor: Colors.green,
+                  padding: EdgeInsets.zero,
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -80,52 +170,79 @@ class _AtapDanPlafonPageState extends State<AtapDanPlafonPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Info box — sama dengan Menu C, auto-fill
+              Container(
+                padding: const EdgeInsets.all(12),
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue[100]!),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blue[400], size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Nilai di bawah ini terisi otomatis dari menu Pekerjaan Lantai dan Timbunan:\n'
+                        '• Panjang Bangunan\n'
+                        '• Lebar Bangunan\n'
+                        'Silakan ubah nilainya jika ada perubahan.',
+                        style: TextStyle(fontSize: 12, color: Colors.blue[700]),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               _buildInputField(
-                "Panjang Bangunan ( meter )",
-                "contoh : 12.5",
+                'Panjang Bangunan ( meter )',
+                'contoh : 12.5',
                 _buildingLengthCtrl,
                 isDecimal: true,
               ),
               _buildInputField(
-                "Lebar Bangunan ( meter )",
-                "contoh : 8.5",
+                'Lebar Bangunan ( meter )',
+                'contoh : 8.5',
                 _buildingWidthCtrl,
                 isDecimal: true,
               ),
+
               const SizedBox(height: 10),
 
-              // btn simpan
-              SizedBox(
-                width: double.infinity,
-                height: 48,
-                child: ElevatedButton.icon(
-                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Data Atap & Plafon disimpan sementara!"),
-                      backgroundColor: Colors.green,
+              // Tombol Simpan
+              Consumer<EstimasiProvider>(
+                builder: (_, provider, __) {
+                  return SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      onPressed: provider.sedangMemuat ? null : _onSimpan,
+                      icon: provider.sedangMemuat
+                          ? const SizedBox(
+                              width: 18, height: 18,
+                              child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2),
+                            )
+                          : const Icon(Icons.check, color: Colors.white),
+                      label: Text(
+                        provider.sedangMemuat ? 'Menyimpan...' : 'Simpan Data',
+                        style: const TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppStyles.primaryGreen,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        elevation: 0,
+                      ),
                     ),
-                  ),
-                  icon: const Icon(Icons.check, color: Colors.white),
-                  label: const Text(
-                    "Simpan Data",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 15,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppStyles.primaryGreen,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    elevation: 0,
-                  ),
-                ),
+                  );
+                },
               ),
               const SizedBox(height: 12),
 
-              // btn next
+              // Tombol Lanjut
               SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -134,7 +251,7 @@ class _AtapDanPlafonPageState extends State<AtapDanPlafonPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => FinishingPage( 
+                        builder: (context) => FinishingPage(
                           projectId: widget.projectId,
                           projectName: widget.projectName,
                           clientName: widget.clientName,
@@ -144,24 +261,19 @@ class _AtapDanPlafonPageState extends State<AtapDanPlafonPage> {
                   },
                   icon: const Icon(Icons.chevron_right, color: Colors.white),
                   label: const Text(
-                    "Lanjut Ke Pekerjaan Finishing",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
+                    'Lanjut Ke Pekerjaan Finishing',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue[700],
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     elevation: 0,
                   ),
                 ),
               ),
               const SizedBox(height: 12),
 
+              // Tombol Menu Estimasi & Reset
               Row(
                 children: [
                   Expanded(
@@ -173,31 +285,20 @@ class _AtapDanPlafonPageState extends State<AtapDanPlafonPage> {
                             context,
                             MaterialPageRoute(
                               builder: (context) => ProjectEstimationPage(
-                                projectId: widget.projectId,       
-                                projectName: widget.projectName,   
-                                clientName: widget.clientName,     
+                                projectId: widget.projectId,
+                                projectName: widget.projectName,
+                                clientName: widget.clientName,
                               ),
                             ),
                             (route) => route.isFirst,
                           );
                         },
-                        icon: Icon(
-                          Icons.home_outlined,
-                          color: Colors.grey[700],
-                        ),
-                        label: Text(
-                          "Menu Estimasi",
-                          style: TextStyle(
-                            color: Colors.grey[700],
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13, 
-                          ),
-                        ),
+                        icon: Icon(Icons.home_outlined, color: Colors.grey[700]),
+                        label: Text('Menu Estimasi',
+                            style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold, fontSize: 13)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.grey[300],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           elevation: 0,
                         ),
                       ),
@@ -208,23 +309,13 @@ class _AtapDanPlafonPageState extends State<AtapDanPlafonPage> {
                     child: SizedBox(
                       height: 48,
                       child: ElevatedButton.icon(
-                        onPressed: () {
-                          _buildingLengthCtrl.clear();
-                          _buildingWidthCtrl.clear();
-                        },
+                        onPressed: _onReset,
                         icon: const Icon(Icons.refresh, color: Colors.red),
-                        label: const Text(
-                          "Reset",
-                          style: TextStyle(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                        label: const Text('Reset',
+                            style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red[50],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           elevation: 0,
                         ),
                       ),
@@ -239,25 +330,15 @@ class _AtapDanPlafonPageState extends State<AtapDanPlafonPage> {
     );
   }
 
-  Widget _buildInputField(
-    String label,
-    String hint,
-    TextEditingController controller, {
-    bool isDecimal = false,
-  }) {
+  Widget _buildInputField(String label, String hint,
+      TextEditingController controller, {bool isDecimal = false}) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
-              color: Colors.black87,
-            ),
-          ),
+          Text(label,
+              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Colors.black87)),
           const SizedBox(height: 8),
           TextField(
             controller: controller,
@@ -270,25 +351,16 @@ class _AtapDanPlafonPageState extends State<AtapDanPlafonPage> {
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 14,
-              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey[300]!)),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(color: Colors.grey[300]!),
-              ),
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: Colors.grey[300]!)),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8),
-                borderSide: BorderSide(
-                  color: AppStyles.primaryGreen,
-                  width: 1.5,
-                ),
-              ),
+                  borderRadius: BorderRadius.circular(8),
+                  borderSide: BorderSide(color: AppStyles.primaryGreen, width: 1.5)),
             ),
           ),
         ],
