@@ -11,8 +11,9 @@ class ProjectModel {
   final String phoneNumber;
   final DateTime createdAt;
   final DateTime updatedAt;
-  
-  // Nullable fields untuk hasil estimasi /  output
+  final String statusPerhitungan;
+
+  // Nullable fields untuk hasil estimasi / output
   final int? workerCount;
   final int? estimatedDuration;
   final double? totalCost;
@@ -28,6 +29,7 @@ class ProjectModel {
     required this.phoneNumber,
     required this.createdAt,
     required this.updatedAt,
+    this.statusPerhitungan = 'belum',
     this.workerCount,
     this.estimatedDuration,
     this.totalCost,
@@ -45,6 +47,7 @@ class ProjectModel {
       phoneNumber: data['phone_number'] ?? '-',
       createdAt: (data['created_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updated_at'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      statusPerhitungan: data['status_perhitungan'] as String? ?? 'belum',
       workerCount: data['worker_count'],
       estimatedDuration: data['estimated_duration'],
       totalCost: (data['total_cost'] as num?)?.toDouble(),
@@ -62,6 +65,7 @@ class ProjectModel {
       'phone_number': phoneNumber,
       'created_at': Timestamp.fromDate(createdAt),
       'updated_at': Timestamp.fromDate(updatedAt),
+      'status_perhitungan': statusPerhitungan,
       'worker_count': workerCount,
       'estimated_duration': estimatedDuration,
       'total_cost': totalCost,

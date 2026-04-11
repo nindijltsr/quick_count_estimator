@@ -174,7 +174,7 @@ class LayananPerhitungan {
       totalBiayaUpah: totalBiayaUpah, dihitungPada: DateTime.now(),
     );
 
-    // rekap material & hitung rincian biaya UI─
+    // rekap material & hitung rincian biaya UI
     double hp(String id) => hargaMaterial[id] ?? 0;
 
     final double tanahTimbun = c.volTimbunan * 1.200;
@@ -217,7 +217,7 @@ class LayananPerhitungan {
     final double saklarGanda = f.volSaklar2.toDouble();
     final double stopKontak = f.volStopKontak.toDouble();
 
-    // -- Hitung Total Keseluruhan --
+    // Hitung Total Keseluruhan
     final double totalBiaya =
         tanahTimbun * hp('tanah_timbun') + batuKali * hp('batu_kali') + kerikil * hp('kerikil') +
         pasirUrug * hp('pasir_urug') + pasirPasang * hp('pasir_pasang') + pasirBeton * hp('pasir_beton') +
@@ -233,7 +233,7 @@ class LayananPerhitungan {
         catDasarKayu * hp('cat_dasar_kayu') + catKayu * hp('cat_kayu') + lampuLed * hp('lampu_led_18w') +
         saklarTunggal * hp('saklar_tunggal') + saklarGanda * hp('saklar_ganda') + stopKontak * hp('stop_kontak');
 
-    // -- Hitung Akurat Rincian Kartu UI --
+    // Hitung Rincian Kartu UI
     final biayaPasirPondasi = ((a.volPasirMenerus + a.volPasirTapak) * 1.200 * hp('pasir_urug')) + (c.volPasirLantai * 1.200 * hp('pasir_urug'));
     final biayaAanstamping = (a.volAanstampMenerus + a.volAanstampTapak) * 1.200 * hp('batu_kali') + (a.volAanstampMenerus + a.volAanstampTapak) * 0.432 * hp('pasir_urug');
     final biayaBatuKali = (a.volBatuKali * 1.200 * hp('batu_kali')) + (a.volBatuKali * 163.0 * hp('semen_pc')) + (a.volBatuKali * 0.520 * hp('pasir_pasang'));

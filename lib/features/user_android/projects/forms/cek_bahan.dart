@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+
 import '../../../../shared/services/estimasi_provider.dart';
 import '../../../../shared/services/layanan_master_harga.dart';
 import '../../../../shared/models/model_rekap_dan_lainnya.dart';
@@ -26,25 +28,23 @@ class _CekBahanPageState extends State<CekBahanPage> {
   Map<String, HargaMaterial> _materialMap = {};
   bool _isLoading = true;
 
+  static final _formatRp = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+
   @override
   void initState() {
     super.initState();
-    _loadMaterialData();
+    _muatDataMaterial();
   }
 
-  Future<void> _loadMaterialData() async {
+  Future<void> _muatDataMaterial() async {
     try {
-      final materials = await _layananHarga.streamSemuaHargaMaterial().first;
-      final map = <String, HargaMaterial>{};
-      for (final material in materials) {
-        map[material.id] = material;
-      }
+      final list = await _layananHarga.streamSemuaHargaMaterial().first;
       setState(() {
-        _materialMap = map;
+        _materialMap = {for (final m in list) m.id: m};
         _isLoading = false;
       });
     } catch (e) {
-      debugPrint('Error loading material data: $e');
+      debugPrint('Error loading material: $e');
       setState(() => _isLoading = false);
     }
   }
@@ -68,26 +68,125 @@ class _CekBahanPageState extends State<CekBahanPage> {
           children: [
             const Text(
               'Cek Kebutuhan Bahan',
-              style: TextStyle(
-                color: Colors.black87,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
+              style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18),
             ),
-            Text(
-              widget.projectName,
-              style: const TextStyle(color: Colors.grey, fontSize: 12),
-            ),
+            Text(widget.projectName, style: const TextStyle(color: Colors.grey, fontSize: 12)),
           ],
         ),
       ),
       body: rekap == null
           ? _buildEmptyState()
           : _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(color: AppStyles.primaryGreen),
-                )
-              : _buildMaterialList(rekap),
+              ? const Center(child: CircularProgressIndicator(color: AppStyles.primaryGreen))
+              : _buildKonten(rekap),
+    );
+  }
+
+  Widget _buildKonten(RekapMaterial rekap) {
+    final items = _buildDaftarItem(rekap);
+
+    if (items.isEmpty) return _buildEmptyState();
+
+    final totalBiayaMaterial = items.fold(0.0, (sum, item) => sum + item.totalHarga);
+
+    return Column(
+      children: [
+        // header summary
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          color: AppStyles.primaryGreen,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '${items.length} Jenis Material',
+                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              Text(
+                _formatRp.format(totalBiayaMaterial),
+                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+              ),
+            ],
+          ),
+        ),
+
+        // list material
+        Expanded(
+          child: Container(
+            color: Colors.white,
+            child: ListView.separated(
+              padding: const EdgeInsets.only(bottom: 16),
+              itemCount: items.length,
+              separatorBuilder: (_, __) => Divider(height: 1, thickness: 0.5, color: Colors.grey[200]),
+              itemBuilder: (context, index) => _buildItemTile(items[index]),
+            ),
+          ),
+        ),
+
+        // footer total
+        _buildFooterTotal(totalBiayaMaterial),
+      ],
+    );
+  }
+
+  Widget _buildItemTile(_ItemBahan item) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // nama material
+          Expanded(
+            flex: 5,
+            child: Text(
+              item.nama,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.black87),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // detail qty × harga = total (rata kanan)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                _formatRp.format(item.totalHarga),
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: Colors.black87),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${_formatQty(item.qty)} ${item.satuan} × ${_formatRp.format(item.hargaSatuan)}',
+                style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFooterTotal(double total) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppStyles.primaryGreen,
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.08), offset: const Offset(0, -2), blurRadius: 8),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            'TOTAL BIAYA MATERIAL',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white, letterSpacing: 0.5),
+          ),
+          Text(
+            _formatRp.format(total),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+        ],
+      ),
     );
   }
 
@@ -102,11 +201,7 @@ class _CekBahanPageState extends State<CekBahanPage> {
             const SizedBox(height: 16),
             const Text(
               'Belum Ada Data Material',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black54,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black54),
             ),
             const SizedBox(height: 8),
             Text(
@@ -119,9 +214,7 @@ class _CekBahanPageState extends State<CekBahanPage> {
               onPressed: () => Navigator.pop(context),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppStyles.primaryGreen,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
               child: const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -134,160 +227,84 @@ class _CekBahanPageState extends State<CekBahanPage> {
     );
   }
 
-  Widget _buildMaterialList(RekapMaterial rekap) {
-    final materials = _buildMaterialItems(rekap);
+  // data build
+  List<_ItemBahan> _buildDaftarItem(RekapMaterial rekap) {
+    final items = <_ItemBahan>[];
 
-    if (materials.isEmpty) {
-      return _buildEmptyState();
-    }
-
-    return Column(
-      children: [
-        Container(
-          margin: const EdgeInsets.all(16),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppStyles.primaryGreen,
-                AppStyles.primaryGreen.withOpacity(0.85),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white, size: 24),
-              const SizedBox(width: 12),
-              Text(
-                'Total ${materials.length} Jenis Bahan',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            itemCount: materials.length,
-            separatorBuilder: (context, index) => Divider(
-              height: 1,
-              thickness: 0.5,
-              color: Colors.grey[300],
-            ),
-            itemBuilder: (context, index) {
-              final item = materials[index];
-              return ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                title: Text(
-                  item['nama']!,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.black87,
-                  ),
-                ),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      item['jumlah']!,
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: AppStyles.primaryGreen,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      item['satuan']!,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
-
-  List<Map<String, String>> _buildMaterialItems(RekapMaterial rekap) {
-    final items = <Map<String, String>>[];
-
-    void addItem(String id, double jumlah) {
-      if (jumlah <= 0) return;
+    void add(String id, double qty) {
+      if (qty <= 0) return;
       final material = _materialMap[id];
       if (material == null) return;
-
-      items.add({
-        'nama': material.nama,
-        'jumlah': _formatJumlah(jumlah),
-        'satuan': material.satuan,
-      });
+      items.add(_ItemBahan(
+        nama: material.nama,
+        satuan: material.satuan,
+        qty: qty,
+        hargaSatuan: material.hargaSatuan,
+      ));
     }
 
-    addItem('tanah_timbun', rekap.tanahTimbun_m3);
-    addItem('batu_kali', rekap.batuKali_m3);
-    addItem('kerikil', rekap.kerikil_kg);
-    addItem('pasir_urug', rekap.pasirUrug_m3);
-    addItem('pasir_pasang', rekap.pasirPasang_m3);
-    addItem('pasir_beton', rekap.pasirBeton_kg);
-    addItem('semen_pc', rekap.semen_kg);
-    addItem('bata_merah', rekap.bataMerah_buah);
-    addItem('besi_polos', rekap.besiPolos_kg);
-    addItem('hollow_4x4', rekap.hollow4x4_batang);
-    addItem('hollow_2x4', rekap.hollow2x4_batang);
-    addItem('profil_c75', rekap.profilC75_m);
-    addItem('reng_baja', rekap.rengBaja_m);
-    addItem('kayu_balok_57', rekap.kayuBalok57_m3);
-    addItem('papan_bekisting', rekap.papanBekisting_m2);
-    addItem('balok_kayu_kelas1', rekap.balkKayuKelas1_m3);
-    addItem('balok_kayu_kelas2', rekap.balkKayuKelas2_m3);
-    addItem('papan_kayu_kelas2', rekap.papanKayuKelas2_m3);
-    addItem('papan_listplank', rekap.papanListplank_m3);
-    addItem('genteng_galvalum', rekap.gentengGalvalum_m2);
-    addItem('nok_galvalum', rekap.nokGalvalum_m);
-    addItem('papan_gypsum', rekap.papanGypsum_lembar);
-    addItem('list_profil_kayu', rekap.listProfilKayu_m);
-    addItem('kaca_5mm', rekap.kaca5mm_m2);
-    addItem('kunci_pintu', rekap.kunciPintu_buah);
-    addItem('engsel_pintu', rekap.engselPintu_buah);
-    addItem('engsel_jendela', rekap.engselJendela_buah);
-    addItem('keramik_40x40', rekap.keramik40x40_buah);
-    addItem('plamir_tembok', rekap.plamirTembok_kg);
-    addItem('cat_dasar_tembok', rekap.catDasarTembok_kg);
-    addItem('cat_tembok', rekap.catTembok_kg);
-    addItem('cat_menie', rekap.catMenie_kg);
-    addItem('plamir_kayu', rekap.plamirKayu_kg);
-    addItem('cat_dasar_kayu', rekap.catDasarKayu_kg);
-    addItem('cat_kayu', rekap.catKayu_kg);
-    addItem('lampu_led_18w', rekap.lampuLed_buah);
-    addItem('saklar_tunggal', rekap.saklarTunggal_buah);
-    addItem('saklar_ganda', rekap.saklarGanda_buah);
-    addItem('stop_kontak', rekap.stopKontak_buah);
+    add('tanah_timbun', rekap.tanahTimbun_m3);
+    add('batu_kali', rekap.batuKali_m3);
+    add('kerikil', rekap.kerikil_kg);
+    add('pasir_urug', rekap.pasirUrug_m3);
+    add('pasir_pasang', rekap.pasirPasang_m3);
+    add('pasir_beton', rekap.pasirBeton_kg);
+    add('semen_pc', rekap.semen_kg);
+    add('bata_merah', rekap.bataMerah_buah);
+    add('besi_polos', rekap.besiPolos_kg);
+    add('hollow_4x4', rekap.hollow4x4_batang);
+    add('hollow_2x4', rekap.hollow2x4_batang);
+    add('profil_c75', rekap.profilC75_m);
+    add('reng_baja', rekap.rengBaja_m);
+    add('kayu_balok_57', rekap.kayuBalok57_m3);
+    add('papan_bekisting', rekap.papanBekisting_m2);
+    add('balok_kayu_kelas1', rekap.balkKayuKelas1_m3);
+    add('balok_kayu_kelas2', rekap.balkKayuKelas2_m3);
+    add('papan_kayu_kelas2', rekap.papanKayuKelas2_m3);
+    add('papan_listplank', rekap.papanListplank_m3);
+    add('genteng_galvalum', rekap.gentengGalvalum_m2);
+    add('nok_galvalum', rekap.nokGalvalum_m);
+    add('papan_gypsum', rekap.papanGypsum_lembar);
+    add('list_profil_kayu', rekap.listProfilKayu_m);
+    add('kaca_5mm', rekap.kaca5mm_m2);
+    add('kunci_pintu', rekap.kunciPintu_buah);
+    add('engsel_pintu', rekap.engselPintu_buah);
+    add('engsel_jendela', rekap.engselJendela_buah);
+    add('keramik_40x40', rekap.keramik40x40_buah);
+    add('plamir_tembok', rekap.plamirTembok_kg);
+    add('cat_dasar_tembok', rekap.catDasarTembok_kg);
+    add('cat_tembok', rekap.catTembok_kg);
+    add('cat_menie', rekap.catMenie_kg);
+    add('plamir_kayu', rekap.plamirKayu_kg);
+    add('cat_dasar_kayu', rekap.catDasarKayu_kg);
+    add('cat_kayu', rekap.catKayu_kg);
+    add('lampu_led_18w', rekap.lampuLed_buah);
+    add('saklar_tunggal', rekap.saklarTunggal_buah);
+    add('saklar_ganda', rekap.saklarGanda_buah);
+    add('stop_kontak', rekap.stopKontak_buah);
 
     return items;
   }
 
-  String _formatJumlah(double jumlah) {
-    if (jumlah == jumlah.toInt()) {
-      return jumlah.toInt().toString();
-    }
-    return jumlah.toStringAsFixed(2);
+  String _formatQty(double qty) {
+    return qty == qty.toInt() ? qty.toInt().toString() : qty.toStringAsFixed(2);
   }
+}
+
+// mode lokal
+
+class _ItemBahan {
+  final String nama;
+  final String satuan;
+  final double qty;
+  final double hargaSatuan;
+
+  double get totalHarga => qty * hargaSatuan;
+
+  const _ItemBahan({
+    required this.nama,
+    required this.satuan,
+    required this.qty,
+    required this.hargaSatuan,
+  });
 }

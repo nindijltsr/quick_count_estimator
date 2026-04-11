@@ -102,8 +102,8 @@ class LayananMasterHarga {
 
     return [
       // kategori tanah dan batuan
-      h('tanah_timbun', 'Tanah Timbun', 'm3', 85000),
-      h('batu_kali', 'Batu Kali', 'm3', 320000),
+      h('tanah_timbun', 'Tanah Timbun', 'm3', 127000),
+      h('batu_kali', 'Batu Kali', 'm3', 255000),
       h('kerikil', 'Kerikil', 'kg', 600),
 
       // kategori pasir

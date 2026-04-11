@@ -29,46 +29,26 @@ class LayananProyek {
       : _db = db ?? FirebaseFirestore.instance;
 
   DocumentReference<Map<String, dynamic>> _refInputUser(String idProyek) =>
-      _db.collection('projects')
-          .doc(idProyek)
-          .collection(_NamaKoleksi.inputUser)
-          .doc(_NamaDokumen.data);
+      _db.collection('projects').doc(idProyek).collection(_NamaKoleksi.inputUser).doc(_NamaDokumen.data);
 
-  DocumentReference<Map<String, dynamic>> _refHasilMenu(
-          String idProyek, String namaMenu) =>
-      _db.collection('projects')
-          .doc(idProyek)
-          .collection(_NamaKoleksi.hasilPerhitungan)
-          .doc(namaMenu);
+  DocumentReference<Map<String, dynamic>> _refHasilMenu(String idProyek, String namaMenu) =>
+      _db.collection('projects').doc(idProyek).collection(_NamaKoleksi.hasilPerhitungan).doc(namaMenu);
 
-  DocumentReference<Map<String, dynamic>> _refRekapMaterial(
-          String idProyek) =>
-      _db.collection('projects')
-          .doc(idProyek)
-          .collection(_NamaKoleksi.rekapAkhir)
-          .doc(_NamaDokumen.material);
+  DocumentReference<Map<String, dynamic>> _refRekapMaterial(String idProyek) =>
+      _db.collection('projects').doc(idProyek).collection(_NamaKoleksi.rekapAkhir).doc(_NamaDokumen.material);
 
   DocumentReference<Map<String, dynamic>> _refProyek(String idProyek) =>
       _db.collection('projects').doc(idProyek);
 
-  // penyimpanan data input pengguna 
-
   Future<void> simpanInputSurveyor(InputSurveyor input) async {
-    await _refInputUser(input.idProyek).set(
-      input.keFirestore(),
-      SetOptions(merge: true),
-    );
+    await _refInputUser(input.idProyek).set(input.keFirestore(), SetOptions(merge: true));
   }
-
-  // pengambilan data input pengguna 
 
   Future<InputSurveyor?> ambilInputSurveyor(String idProyek) async {
     final doc = await _refInputUser(idProyek).get();
     if (!doc.exists) return null;
     return InputSurveyor.dariFirestore(doc);
   }
-
-  // penyimpanan hasil kalkulasi per modul (iteratif)
 
   Future<void> simpanHasilMenuA(String idProyek, HasilMenuA hasil) async {
     await _refHasilMenu(idProyek, _NamaDokumen.menuA).set(hasil.keFirestore());
@@ -100,8 +80,6 @@ class LayananProyek {
     await _tandaiStatusProyek(idProyek);
   }
 
-  // operasi batch penyimpanan data menyeluruh 
-
   Future<void> simpanSemuaHasil({
     required String idProyek,
     required HasilMenuA menuA,
@@ -131,8 +109,6 @@ class LayananProyek {
 
     await batch.commit();
   }
-
-  // pengambilan data hasil kalkulasi per modul
 
   Future<HasilMenuA?> ambilHasilMenuA(String idProyek) async {
     final doc = await _refHasilMenu(idProyek, _NamaDokumen.menuA).get();
@@ -182,16 +158,12 @@ class LayananProyek {
     return RekapMaterial.dariFirestore(doc.data()!);
   }
 
-  // pemantauan real-time status proyek
-
   Stream<String> streamStatusPerhitungan(String idProyek) {
     return _refProyek(idProyek).snapshots().map((doc) {
       if (!doc.exists) return 'belum';
       return (doc.data()?['status_perhitungan'] as String?) ?? 'belum';
     });
   }
-
-  // helper operasional internal
 
   Future<void> _tandaiStatusProyek(String idProyek) async {
     await _refProyek(idProyek).update({
@@ -201,14 +173,12 @@ class LayananProyek {
   }
 }
 
-// layanan manajemen log histori aktivitas 
 class LayananHistori {
   final FirebaseFirestore _db;
 
   LayananHistori({FirebaseFirestore? db})
       : _db = db ?? FirebaseFirestore.instance;
 
-  // pencatatan aktivitas pengguna
   Future<void> catatAktivitas({
     required String idProyek,
     required String idPengguna,
@@ -224,7 +194,6 @@ class LayananHistori {
     });
   }
 
-  // aliran data real-time riwayat proyek
   Stream<List<LogHistori>> streamHistoriProyek(String idProyek) {
     return _db
         .collection('riwayatAktivitas')
@@ -232,7 +201,15 @@ class LayananHistori {
         .orderBy('dibuat_pada', descending: true)
         .limit(50)
         .snapshots()
-        .map((snap) =>
-            snap.docs.map((d) => LogHistori.dariFirestore(d)).toList());
+        .map((snap) => snap.docs.map((d) => LogHistori.dariFirestore(d)).toList());
+  }
+  
+  Stream<List<LogHistori>> streamSemuaAktivitas({int limit = 100}) {
+    return _db
+        .collection('riwayatAktivitas')
+        .orderBy('dibuat_pada', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => LogHistori.dariFirestore(d)).toList());
   }
 }

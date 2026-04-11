@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart';
 import '../../../shared/models/project_model.dart';
 import '../../../shared/services/project_service.dart';
+import '../../../shared/utils/styles.dart';
+import 'project_detail_page.dart';
 
 class ProjectPage extends StatefulWidget {
   const ProjectPage({super.key});
@@ -12,17 +14,15 @@ class ProjectPage extends StatefulWidget {
 
 class _ProjectPageState extends State<ProjectPage> {
   final ProjectService _projectService = ProjectService();
-  
+
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = "";
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _searchController.addListener(() {
-      setState(() {
-        _searchQuery = _searchController.text.toLowerCase();
-      });
+      setState(() => _searchQuery = _searchController.text.toLowerCase());
     });
   }
 
@@ -35,69 +35,63 @@ class _ProjectPageState extends State<ProjectPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.transparent, 
+      backgroundColor: Colors.transparent,
       body: Padding(
         padding: const EdgeInsets.all(30.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // header
+            // Header
             const Text(
-              "DAFTAR PROYEK",
+              'DAFTAR PROYEK',
               style: TextStyle(
-                fontSize: 24, 
-                fontWeight: FontWeight.bold, 
-                letterSpacing: 1.2,
-              ),
+                  fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 1.2),
             ),
             const SizedBox(height: 5),
             const Text(
-              "Semua proyek yang telah di-survey oleh tim",
+              'Semua proyek yang telah di-survey oleh tim',
               style: TextStyle(color: Colors.grey, fontSize: 13),
             ),
             const SizedBox(height: 25),
 
-            // search bar
+            // Search bar
             SizedBox(
               width: 400,
               child: TextField(
-                controller: _searchController, 
+                controller: _searchController,
                 style: const TextStyle(fontSize: 14),
                 decoration: InputDecoration(
-                  hintText: "Cari Proyek, Klien, atau Surveyor...",
+                  hintText: 'Cari Proyek, Klien, atau Surveyor...',
                   hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
                   prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey[500]),
-                  suffixIcon: _searchQuery.isNotEmpty 
-                    ? IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.grey, size: 20),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _searchQuery = "");
-                        },
-                      ) 
-                    : null,
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, color: Colors.grey, size: 20),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() => _searchQuery = '');
+                          },
+                        )
+                      : null,
                   filled: true,
                   fillColor: Colors.grey[200],
                   hoverColor: Colors.transparent,
                   contentPadding: const EdgeInsets.symmetric(vertical: 0),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
-                  ),
+                      borderRadius: BorderRadius.circular(8),
+                      borderSide: BorderSide.none),
                 ),
               ),
             ),
             const SizedBox(height: 20),
 
-            // tabel dinamis
+            // Tabel dinamis
             Expanded(
               child: StreamBuilder<List<ProjectModel>>(
                 stream: _projectService.getAllProjects(),
@@ -105,21 +99,19 @@ class _ProjectPageState extends State<ProjectPage> {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator());
                   }
-                  
+
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(child: Text("Belum ada data proyek."));
+                    return const Center(child: Text('Belum ada data proyek.'));
                   }
 
-                  // logika searching
                   final allProjects = snapshot.data!;
                   final filteredProjects = allProjects.where((project) {
                     final name = project.projectName.toLowerCase();
                     final client = project.clientName.toLowerCase();
                     final surveyor = project.surveyorName.toLowerCase();
-                    
-                    return name.contains(_searchQuery) || 
-                           client.contains(_searchQuery) || 
-                           surveyor.contains(_searchQuery);
+                    return name.contains(_searchQuery) ||
+                        client.contains(_searchQuery) ||
+                        surveyor.contains(_searchQuery);
                   }).toList();
 
                   if (filteredProjects.isEmpty) {
@@ -129,27 +121,24 @@ class _ProjectPageState extends State<ProjectPage> {
                         children: [
                           Icon(Icons.search_off, size: 40, color: Colors.grey[400]),
                           const SizedBox(height: 10),
-                          Text(
-                            "Pencarian '$_searchQuery' tidak ditemukan.",
-                            style: TextStyle(color: Colors.grey[600]),
-                          ),
+                          Text("Pencarian '$_searchQuery' tidak ditemukan.",
+                              style: TextStyle(color: Colors.grey[600])),
                         ],
                       ),
                     );
                   }
 
                   return Align(
-                    alignment: Alignment.topCenter, 
+                    alignment: Alignment.topCenter,
                     child: Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(15), 
+                        borderRadius: BorderRadius.circular(15),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.05), 
-                            blurRadius: 10, 
-                          )
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 10)
                         ],
                       ),
                       child: ClipRRect(
@@ -157,66 +146,91 @@ class _ProjectPageState extends State<ProjectPage> {
                         child: Scrollbar(
                           thumbVisibility: true,
                           child: SingleChildScrollView(
-                            scrollDirection: Axis.vertical, 
+                            scrollDirection: Axis.vertical,
                             child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal, 
+                              scrollDirection: Axis.horizontal,
                               child: ConstrainedBox(
-                                constraints: BoxConstraints(minWidth: MediaQuery.of(context).size.width - 350),
+                                constraints: BoxConstraints(
+                                    minWidth:
+                                        MediaQuery.of(context).size.width - 350),
                                 child: DataTable(
-                                  headingRowColor: WidgetStateProperty.all(const Color(0xFFE3EAE6)), 
+                                  headingRowColor: WidgetStateProperty.all(
+                                      const Color(0xFFE3EAE6)),
                                   headingTextStyle: const TextStyle(
-                                    fontWeight: FontWeight.bold, 
-                                    color: Colors.black87, 
-                                    fontSize: 13
-                                  ),
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black87,
+                                      fontSize: 13),
                                   headingRowHeight: 55,
-                                  dataRowColor: WidgetStateProperty.resolveWith<Color?>((states) => Colors.white),
-                                  dataRowMinHeight: 55, 
+                                  dataRowColor:
+                                      WidgetStateProperty.resolveWith<Color?>(
+                                          (states) => Colors.white),
+                                  dataRowMinHeight: 55,
                                   dataRowMaxHeight: 55,
                                   columnSpacing: 25,
-                                  dividerThickness: 1, 
-                                  
+                                  dividerThickness: 1,
                                   columns: const [
-                                    DataColumn(label: Text("Nomor")), 
-                                    DataColumn(label: Text("Nama Proyek")),
-                                    DataColumn(label: Text("Nama Klien")),
-                                    DataColumn(label: Text("Surveyor")),
-                                    DataColumn(label: Text("Tanggal")),
-                                    DataColumn(label: Text("Aksi")),
+                                    DataColumn(label: Text('Nomor')),
+                                    DataColumn(label: Text('Nama Proyek')),
+                                    DataColumn(label: Text('Nama Klien')),
+                                    DataColumn(label: Text('Surveyor')),
+                                    DataColumn(label: Text('Tanggal')),
+                                    DataColumn(label: Text('Status')),
+                                    DataColumn(label: Text('Aksi')),
                                   ],
-                                  
-                                  rows: List.generate(filteredProjects.length, (index) {
-                                    final project = filteredProjects[index];
-                                    final number = index + 1;
-                                    String formattedDate = DateFormat('dd/MM/yyyy').format(project.createdAt);
+                                  rows: List.generate(
+                                    filteredProjects.length,
+                                    (index) {
+                                      final project = filteredProjects[index];
+                                      final number = index + 1;
+                                      final formattedDate =
+                                          DateFormat('dd/MM/yyyy')
+                                              .format(project.createdAt);
 
-                                    return DataRow(cells: [
-                                      DataCell(Text(number.toString(), style: const TextStyle(fontWeight: FontWeight.bold))),
-                                      DataCell(Text(project.projectName)),
-                                      DataCell(Text(project.clientName)),
-                                      DataCell(Text(project.surveyorName)),
-                                      DataCell(Text(formattedDate)),
-
-                                      DataCell(
-                                        ElevatedButton.icon(
-                                          onPressed: () {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                const SnackBar(content: Text("Fitur Detail (Coming Soon)"))
-                                              );
-                                          },
-                                          icon: const Icon(Icons.remove_red_eye, size: 14, color: Colors.white),
-                                          label: const Text("Detail", style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFF1B5E20), 
-                                            foregroundColor: Colors.white,
-                                            elevation: 0,
-                                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                            shape: const StadiumBorder(), 
+                                      return DataRow(cells: [
+                                        DataCell(Text(number.toString(),
+                                            style: const TextStyle(
+                                                fontWeight: FontWeight.bold))),
+                                        DataCell(Text(project.projectName)),
+                                        DataCell(Text(project.clientName)),
+                                        DataCell(Text(project.surveyorName)),
+                                        DataCell(Text(formattedDate)),
+                                        DataCell(_buildStatusBadge(
+                                            project.statusPerhitungan)),
+                                        DataCell(
+                                          ElevatedButton.icon(
+                                            onPressed: () => Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) =>
+                                                    ProjectDetailPage(
+                                                        project: project),
+                                              ),
+                                            ),
+                                            icon: const Icon(
+                                                Icons.remove_red_eye,
+                                                size: 14,
+                                                color: Colors.white),
+                                            label: const Text('Detail',
+                                                style: TextStyle(
+                                                    fontSize: 12,
+                                                    fontWeight:
+                                                        FontWeight.w600)),
+                                            style: ElevatedButton.styleFrom(
+                                              backgroundColor:
+                                                  const Color(0xFF1B5E20),
+                                              foregroundColor: Colors.white,
+                                              elevation: 0,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 16,
+                                                      vertical: 12),
+                                              shape: const StadiumBorder(),
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ]);
-                                  }),
+                                      ]);
+                                    },
+                                  ),
                                 ),
                               ),
                             ),
@@ -231,6 +245,38 @@ class _ProjectPageState extends State<ProjectPage> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildStatusBadge(String status) {
+    final Color bgColor;
+    final Color textColor;
+    final String label;
+
+    switch (status) {
+      case 'selesai':
+        bgColor = Colors.green[50]!;
+        textColor = Colors.green[800]!;
+        label = 'Selesai';
+        break;
+      case 'sedang_berjalan':
+        bgColor = Colors.orange[50]!;
+        textColor = Colors.orange[800]!;
+        label = 'Berjalan';
+        break;
+      default:
+        bgColor = Colors.grey[100]!;
+        textColor = Colors.grey[600]!;
+        label = 'Belum';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration:
+          BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(6)),
+      child: Text(label,
+          style: TextStyle(
+              fontSize: 11, fontWeight: FontWeight.w600, color: textColor)),
     );
   }
 }

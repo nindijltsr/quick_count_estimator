@@ -18,6 +18,17 @@ class _ProjectPageState extends State<ProjectPage> {
   final TextEditingController _clientController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
+
+  String _searchQuery = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() => _searchQuery = _searchController.text.toLowerCase());
+    });
+  }
 
   @override
   void dispose() {
@@ -25,6 +36,7 @@ class _ProjectPageState extends State<ProjectPage> {
     _clientController.dispose();
     _addressController.dispose();
     _phoneController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -66,13 +78,8 @@ class _ProjectPageState extends State<ProjectPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      project == null
-                          ? "Tambah Proyek Baru"
-                          : "Edit Data Proyek",
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      project == null ? "Tambah Proyek Baru" : "Edit Data Proyek",
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close),
@@ -82,16 +89,8 @@ class _ProjectPageState extends State<ProjectPage> {
                 ),
                 const SizedBox(height: 20),
 
-                _buildTextField(
-                  "Nama Proyek",
-                  "Masukkan nama proyek ...",
-                  _nameController,
-                ),
-                _buildTextField(
-                  "Nama Klien / Pemilik",
-                  "Masukkan nama klien ...",
-                  _clientController,
-                ),
+                _buildTextField("Nama Proyek", "Masukkan nama proyek ...", _nameController),
+                _buildTextField("Nama Klien / Pemilik", "Masukkan nama klien ...", _clientController),
                 _buildTextField(
                   "Alamat Lokasi",
                   "Alamat lengkap lokasi proyek",
@@ -113,13 +112,10 @@ class _ProjectPageState extends State<ProjectPage> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppStyles.primaryGreen,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                     ),
                     onPressed: () async {
                       if (_nameController.text.isEmpty) return;
-
                       Navigator.pop(context);
 
                       if (project == null) {
@@ -192,26 +188,36 @@ class _ProjectPageState extends State<ProjectPage> {
       ),
       body: Column(
         children: [
+          // Search bar 
           Container(
             padding: const EdgeInsets.all(16),
             color: Colors.white,
             child: TextField(
+              controller: _searchController,
+              onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
               decoration: InputDecoration(
                 hintText: "Cari proyek atau klien ...",
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear, size: 18, color: Colors.grey),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _searchQuery = '');
+                        },
+                      )
+                    : null,
                 filled: true,
                 fillColor: Colors.grey[100],
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(30),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 15,
-                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               ),
             ),
           ),
+
           Expanded(
             child: StreamBuilder<List<ProjectModel>>(
               stream: _projectService.getProjectsForUser(),
@@ -221,7 +227,6 @@ class _ProjectPageState extends State<ProjectPage> {
                 }
 
                 if (snapshot.hasError) {
-                  debugPrint("🔥 ERROR FIRESTORE: ${snapshot.error}");
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(20.0),
@@ -244,7 +249,28 @@ class _ProjectPageState extends State<ProjectPage> {
                   );
                 }
 
-                final projects = snapshot.data!;
+                // Filter berdasarkan _searchQuery
+                final semuaProyek = snapshot.data!;
+                final projects = _searchQuery.isEmpty
+                    ? semuaProyek
+                    : semuaProyek.where((p) {
+                        return p.projectName.toLowerCase().contains(_searchQuery) ||
+                            p.clientName.toLowerCase().contains(_searchQuery);
+                      }).toList();
+
+                if (projects.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        "Tidak ada hasil untuk \"$_searchQuery\".",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                      ),
+                    ),
+                  );
+                }
+
                 return ListView.builder(
                   padding: const EdgeInsets.only(bottom: 80),
                   itemCount: projects.length,
@@ -268,12 +294,9 @@ class _ProjectPageState extends State<ProjectPage> {
   Widget _buildProjectCard(ProjectModel project) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: Colors.grey[200]!, width: 1.0),
-        ),
+        border: Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1.0)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,9 +334,7 @@ class _ProjectPageState extends State<ProjectPage> {
                     backgroundColor: AppStyles.primaryGreen,
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
@@ -321,21 +342,12 @@ class _ProjectPageState extends State<ProjectPage> {
               const SizedBox(width: 16),
               InkWell(
                 onTap: () => _showProjectForm(project: project),
-                child: const Icon(
-                  Icons.edit_outlined,
-                  color: Colors.blue,
-                  size: 22,
-                ),
+                child: const Icon(Icons.edit_outlined, color: Colors.blue, size: 22),
               ),
               const SizedBox(width: 16),
-
               InkWell(
                 onTap: () => _confirmDelete(project.projectId),
-                child: const Icon(
-                  Icons.delete_outline,
-                  color: Colors.red,
-                  size: 22,
-                ),
+                child: const Icon(Icons.delete_outline, color: Colors.red, size: 22),
               ),
             ],
           ),
@@ -356,10 +368,7 @@ class _ProjectPageState extends State<ProjectPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-          ),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
           const SizedBox(height: 8),
           TextField(
             controller: controller,
@@ -368,10 +377,7 @@ class _ProjectPageState extends State<ProjectPage> {
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: Colors.grey[300]!),
