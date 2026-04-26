@@ -16,7 +16,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   final User? currentUser = FirebaseAuth.instance.currentUser;
 
-  // Format tanggal menjadi "Bulan Tahun"
+  // format tanggal jadi "bulan tahun"
   String _formatDate(DateTime date) {
     const List<String> months = [
       '', 'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
@@ -25,7 +25,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return '${months[date.month]} ${date.year}';
   }
 
-  // Logout
+  // logout
   Future<void> _handleLogout() async {
     await context.read<AuthService>().logout();
     if (mounted) {

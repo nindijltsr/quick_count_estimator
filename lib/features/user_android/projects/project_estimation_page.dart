@@ -1,8 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart'; 
 
 import '../../../shared/services/estimasi_provider.dart';
+import '../../../shared/services/koefisien_provider.dart';
+import '../../../shared/services/layanan_notifikasi.dart'; 
 
 import 'forms/persiapan_tanah_pondasi.dart';
 import 'forms/struktur_dan_dinding.dart';
@@ -31,16 +35,125 @@ class ProjectEstimationPage extends StatefulWidget {
 }
 
 class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
+  // NOTIFIKASI & BANNER
+  final LayananNotifikasi _layananNotif = LayananNotifikasi();
+  DateTime? _lastMasterUpdate;
+  bool _adaBannerPeringatan = false;
+  StreamSubscription<DateTime?>? _bannerSubscription;
+
+  static final _formatTanggal = DateFormat('dd MMM yyyy, HH:mm');
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await context.read<EstimasiProvider>().inisialisasiProyek(
+      final koefisienProvider = context.read<KoefisienProvider>();
+      final estimasiProvider = context.read<EstimasiProvider>();
+
+      // Double Protection: Inject koefisien master (akan ditimpa snapshot jika proyek lama)
+      estimasiProvider.setKoefisienAktif(koefisienProvider.aktif);
+
+      await estimasiProvider.inisialisasiProyek(
         idProyek: widget.projectId,
         idPengguna: FirebaseAuth.instance.currentUser?.uid ?? '',
+        namaProyek: widget.projectName,
       );
+
+      // Cek banner sekali saat init, lalu listen stream untuk reaktivitas
+      await _cekStatusBanner(estimasiProvider);
+      _mulaiListenBanner();
     });
+  }
+
+  Future<void> _cekStatusBanner(EstimasiProvider provider) async {
+    final lastUpdate = await _layananNotif.ambilLastMasterUpdate();
+    if (!mounted) return;
+
+    setState(() {
+      _lastMasterUpdate = lastUpdate;
+      final snapshot = provider.tanggalSnapshotDiambil;
+      // Munculkan banner JIKA master lebih baru dari snapshot
+      _adaBannerPeringatan =
+          lastUpdate != null &&
+          (snapshot == null || lastUpdate.isAfter(snapshot));
+    });
+  }
+
+  /// Listen stream perubahan master — banner muncul reaktif tanpa harus back/forward.
+  void _mulaiListenBanner() {
+    _bannerSubscription = _layananNotif.streamLastMasterUpdate().listen((
+      lastMaster,
+    ) {
+      if (!mounted) return;
+      final provider = context.read<EstimasiProvider>();
+      final snapshot = provider.tanggalSnapshotDiambil;
+      final adaBanner =
+          lastMaster != null &&
+          (snapshot == null || lastMaster.isAfter(snapshot));
+      if (adaBanner != _adaBannerPeringatan ||
+          (lastMaster != null && lastMaster != _lastMasterUpdate)) {
+        setState(() {
+          _lastMasterUpdate = lastMaster;
+          _adaBannerPeringatan = adaBanner;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _bannerSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _jalankanRefresh() async {
+    // Tampilkan pop-up dialog konfirmasi anti-kepeleset
+    final konfirmasi = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Konfirmasi Refresh Data'),
+        content: const Text(
+          'Apakah Anda yakin memperbarui data?\n\n'
+          'Data RAB lama akan tertimpa dengan harga dan koefisien terbaru dari master. '
+          'Tindakan ini tidak dapat dibatalkan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange[700],
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text(
+              'Ya, Refresh',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (konfirmasi != true || !mounted) return;
+
+    final estimasiProvider = context.read<EstimasiProvider>();
+    // BENAR — tanpa argumen
+    await estimasiProvider.refreshDariMaster();
+
+    if (!mounted) return;
+
+    // Hilangkan banner setelah sukses
+    setState(() => _adaBannerPeringatan = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Data berhasil diperbarui ke versi master terbaru.'),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   void _showDevelopmentMessage(BuildContext context, String featureName) {
@@ -75,10 +188,16 @@ class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           title: Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: Colors.orange[700], size: 28),
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.orange[700],
+                size: 28,
+              ),
               const SizedBox(width: 12),
               const Text('Data Kosong', style: TextStyle(fontSize: 18)),
             ],
@@ -91,7 +210,10 @@ class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('OK', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'OK',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         ),
@@ -147,13 +269,18 @@ class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(widget.projectName,
-                style: const TextStyle(
-                    color: Colors.black87,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18)),
-            Text('Klien : ${widget.clientName}',
-                style: const TextStyle(color: Colors.grey, fontSize: 13)),
+            Text(
+              widget.projectName,
+              style: const TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            Text(
+              'Klien : ${widget.clientName}',
+              style: const TextStyle(color: Colors.grey, fontSize: 13),
+            ),
           ],
         ),
       ),
@@ -161,8 +288,10 @@ class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
-            // ── MENU INPUT (A–F) ──────────────────────────
+            // ── BANNER PERINGATAN REFRESH ────────────────────────
+            if (_adaBannerPeringatan) _buildBannerRefresh(),
 
+            // ── MENU INPUT (A–F) ──────────────────────────
             _buildTaskCard(
               context: context,
               title: 'Pekerjaan Persiapan, Tanah & Fondasi',
@@ -170,13 +299,16 @@ class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
               icon: Icons.landscape,
               iconColor: Colors.brown,
               bgColor: Colors.brown[50]!,
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (context) => PersiapanTanahFondasiPage(
-                  projectId: widget.projectId,
-                  projectName: widget.projectName,
-                  clientName: widget.clientName,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PersiapanTanahFondasiPage(
+                    projectId: widget.projectId,
+                    projectName: widget.projectName,
+                    clientName: widget.clientName,
+                  ),
                 ),
-              )),
+              ),
             ),
 
             _buildTaskCard(
@@ -186,13 +318,16 @@ class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
               icon: Icons.foundation,
               iconColor: Colors.blueGrey,
               bgColor: Colors.blueGrey[50]!,
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (context) => StrukturDanDindingPage(
-                  projectId: widget.projectId,
-                  projectName: widget.projectName,
-                  clientName: widget.clientName,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => StrukturDanDindingPage(
+                    projectId: widget.projectId,
+                    projectName: widget.projectName,
+                    clientName: widget.clientName,
+                  ),
                 ),
-              )),
+              ),
             ),
 
             _buildTaskCard(
@@ -202,13 +337,16 @@ class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
               icon: Icons.grid_on,
               iconColor: Colors.teal,
               bgColor: Colors.teal[50]!,
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (context) => LantaiDanTimbunanPage(
-                  projectId: widget.projectId,
-                  projectName: widget.projectName,
-                  clientName: widget.clientName,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => LantaiDanTimbunanPage(
+                    projectId: widget.projectId,
+                    projectName: widget.projectName,
+                    clientName: widget.clientName,
+                  ),
                 ),
-              )),
+              ),
             ),
 
             _buildTaskCard(
@@ -218,13 +356,16 @@ class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
               icon: Icons.door_front_door,
               iconColor: Colors.orange,
               bgColor: Colors.orange[50]!,
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (context) => PintuJendelaPengunciPage(
-                  projectId: widget.projectId,
-                  projectName: widget.projectName,
-                  clientName: widget.clientName,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => PintuJendelaPengunciPage(
+                    projectId: widget.projectId,
+                    projectName: widget.projectName,
+                    clientName: widget.clientName,
+                  ),
                 ),
-              )),
+              ),
             ),
 
             _buildTaskCard(
@@ -234,13 +375,16 @@ class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
               icon: Icons.roofing,
               iconColor: Colors.red,
               bgColor: Colors.red[50]!,
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (context) => AtapDanPlafonPage(
-                  projectId: widget.projectId,
-                  projectName: widget.projectName,
-                  clientName: widget.clientName,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => AtapDanPlafonPage(
+                    projectId: widget.projectId,
+                    projectName: widget.projectName,
+                    clientName: widget.clientName,
+                  ),
                 ),
-              )),
+              ),
             ),
 
             _buildTaskCard(
@@ -250,13 +394,16 @@ class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
               icon: Icons.format_paint,
               iconColor: Colors.purple,
               bgColor: Colors.purple[50]!,
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (context) => FinishingPage(
-                  projectId: widget.projectId,
-                  projectName: widget.projectName,
-                  clientName: widget.clientName,
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => FinishingPage(
+                    projectId: widget.projectId,
+                    projectName: widget.projectName,
+                    clientName: widget.clientName,
+                  ),
                 ),
-              )),
+              ),
             ),
 
             const Divider(height: 30, thickness: 1),
@@ -272,10 +419,12 @@ class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
                   subtitle: provider.dataLengkap
                       ? 'Lihat estimasi OH dan biaya upah'
                       : provider.adaDataParsial
-                          ? 'Data parsial (${provider.jumlahMenuTerisi}/6 menu)'
-                          : 'Isi minimal 1 menu untuk melihat estimasi',
+                      ? 'Data parsial (${provider.jumlahMenuTerisi}/6 menu)'
+                      : 'Isi minimal 1 menu untuk melihat estimasi',
                   icon: Icons.engineering,
-                  iconColor: provider.jumlahMenuTerisi > 0 ? Colors.indigo : Colors.grey,
+                  iconColor: provider.jumlahMenuTerisi > 0
+                      ? Colors.indigo
+                      : Colors.grey,
                   bgColor: provider.jumlahMenuTerisi > 0
                       ? Colors.indigo[50]!
                       : Colors.grey[100]!,
@@ -350,6 +499,70 @@ class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
     );
   }
 
+  // WIDGET BANNER KUNING REFRESH DATA
+  Widget _buildBannerRefresh() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.amber[50],
+        border: Border.all(color: Colors.amber.shade400),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.warning_amber_rounded,
+                color: Colors.amber[800],
+                size: 18,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Master data telah diperbarui',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                    color: Colors.amber[900],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            _lastMasterUpdate != null
+                ? 'Harga/koefisien master diperbarui pada ${_formatTanggal.format(_lastMasterUpdate!)}. '
+                      'RAB proyek ini masih menggunakan data lama.'
+                : 'Harga atau koefisien master telah diperbarui. RAB proyek ini menggunakan data lama.',
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.amber[800],
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _jalankanRefresh,
+              icon: const Icon(Icons.refresh, size: 16),
+              label: const Text('Refresh Data ke Versi Terbaru'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.amber[900],
+                side: BorderSide(color: Colors.amber.shade600),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTaskCard({
     required BuildContext context,
     required String title,
@@ -383,10 +596,14 @@ class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
           ),
           child: Icon(icon, color: iconColor, size: 28),
         ),
-        title: Text(title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-        subtitle: Text(subtitle,
-            style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+        ),
+        subtitle: Text(
+          subtitle,
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
+        ),
         trailing: const Icon(Icons.chevron_right, color: Colors.grey),
         onTap: onTap,
       ),
@@ -406,15 +623,20 @@ class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
       child: ElevatedButton.icon(
         onPressed: onPressed,
         icon: Icon(icon, color: Colors.white),
-        label: Text(label,
-            style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16)),
+        label: Text(
+          label,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
         style: ElevatedButton.styleFrom(
           backgroundColor: color,
           elevation: 0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       ),
     );

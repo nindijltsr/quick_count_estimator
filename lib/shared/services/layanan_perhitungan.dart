@@ -1,10 +1,10 @@
-// lib/shared/services/layanan_perhitungan.dart
-
 import '../models/model_input_surveyor.dart';
 import '../models/model_hasil_perhitungan.dart';
 import '../models/model_rekap_dan_lainnya.dart';
+import '../models/model_koefisien.dart';
 
 class LayananPerhitungan {
+  /// Koefisien geometri bangunan 
   HasilMenuA hitungMenuA(InputSurveyor input) {
     final double pTanah = input.pTanah;
     final double lTanah = input.lTanah;
@@ -24,7 +24,15 @@ class LayananPerhitungan {
     final double volUrugMenerus = volGalianMenerus * 0.25;
     final double volUrugTapak = volGalianTapak * 0.75;
 
-    return HasilMenuA(volBersih: volBersih, volBouwplank: volBouwplank, volGalianMenerus: volGalianMenerus, volPasirMenerus: volPasirMenerus, volAanstampMenerus: volAanstampMenerus, volBatuKali: volBatuKali, volGalianTapak: volGalianTapak, volPasirTapak: volPasirTapak, volAanstampTapak: volAanstampTapak, volBetonTapak: volBetonTapak, volUrugMenerus: volUrugMenerus, volUrugTapak: volUrugTapak, dihitungPada: DateTime.now());
+    return HasilMenuA(
+      volBersih: volBersih, volBouwplank: volBouwplank,
+      volGalianMenerus: volGalianMenerus, volPasirMenerus: volPasirMenerus,
+      volAanstampMenerus: volAanstampMenerus, volBatuKali: volBatuKali,
+      volGalianTapak: volGalianTapak, volPasirTapak: volPasirTapak,
+      volAanstampTapak: volAanstampTapak, volBetonTapak: volBetonTapak,
+      volUrugMenerus: volUrugMenerus, volUrugTapak: volUrugTapak,
+      dihitungPada: DateTime.now(),
+    );
   }
 
   HasilMenuB hitungMenuB(InputSurveyor input) {
@@ -38,7 +46,11 @@ class LayananPerhitungan {
     final double volPlester = volDinding * 2;
     final double volAcian = volDinding * 2;
 
-    return HasilMenuB(volSloof: volSloof, volKolom: volKolom, volRingBalok: volRingBalok, volDinding: volDinding, volPlester: volPlester, volAcian: volAcian, dihitungPada: DateTime.now());
+    return HasilMenuB(
+      volSloof: volSloof, volKolom: volKolom, volRingBalok: volRingBalok,
+      volDinding: volDinding, volPlester: volPlester, volAcian: volAcian,
+      dihitungPada: DateTime.now(),
+    );
   }
 
   HasilMenuC hitungMenuC(InputSurveyor input) {
@@ -51,7 +63,11 @@ class LayananPerhitungan {
     final double volCorLantai = luasLantai * 0.05;
     final double volKeramik = luasLantai;
 
-    return HasilMenuC(luasLantai: luasLantai, volTimbunan: volTimbunan, volPasirLantai: volPasirLantai, volCorLantai: volCorLantai, volKeramik: volKeramik, dihitungPada: DateTime.now());
+    return HasilMenuC(
+      luasLantai: luasLantai, volTimbunan: volTimbunan,
+      volPasirLantai: volPasirLantai, volCorLantai: volCorLantai,
+      volKeramik: volKeramik, dihitungPada: DateTime.now(),
+    );
   }
 
   HasilMenuD hitungMenuD(InputSurveyor input) {
@@ -69,7 +85,14 @@ class LayananPerhitungan {
     final int jmlEngselJendela = jmlJendela * 2;
     final double volKusenTotal = volKusenPintu + volKusenVentilasi + volKusenJendela;
 
-    return HasilMenuD(volKusenPintu: volKusenPintu, volDaunPintu: volDaunPintu, volKusenVentilasi: volKusenVentilasi, jmlKunci: jmlKunci, jmlEngselPintu: jmlEngselPintu, volKusenJendela: volKusenJendela, volDaunJendela: volDaunJendela, volKaca: volKaca, jmlEngselJendela: jmlEngselJendela, volKusenTotal: volKusenTotal, dihitungPada: DateTime.now());
+    return HasilMenuD(
+      volKusenPintu: volKusenPintu, volDaunPintu: volDaunPintu,
+      volKusenVentilasi: volKusenVentilasi, jmlKunci: jmlKunci,
+      jmlEngselPintu: jmlEngselPintu, volKusenJendela: volKusenJendela,
+      volDaunJendela: volDaunJendela, volKaca: volKaca,
+      jmlEngselJendela: jmlEngselJendela, volKusenTotal: volKusenTotal,
+      dihitungPada: DateTime.now(),
+    );
   }
 
   HasilMenuE hitungMenuE(InputSurveyor input) {
@@ -83,7 +106,12 @@ class LayananPerhitungan {
     final double volListplank = 2 * ((pBangunan + 2) + (lBangunan + 2));
     final double volNok = pBangunan + 2;
 
-    return HasilMenuE(volPlafon: volPlafon, volListPlafon: volListPlafon, volRangkaAtap: volRangkaAtap, volGenteng: volGenteng, volListplank: volListplank, volNok: volNok, dihitungPada: DateTime.now());
+    return HasilMenuE(
+      volPlafon: volPlafon, volListPlafon: volListPlafon,
+      volRangkaAtap: volRangkaAtap, volGenteng: volGenteng,
+      volListplank: volListplank, volNok: volNok,
+      dihitungPada: DateTime.now(),
+    );
   }
 
   HasilMenuF hitungMenuF({
@@ -95,73 +123,163 @@ class LayananPerhitungan {
     final double volCatTembok = hasilB.volDinding;
     final double volCatPlafon = hasilE.volPlafon;
     final double volCatKayu = hasilD.volDaunPintu + hasilD.volDaunJendela;
-    final int volLampu = input.jmlLampu;
-    final int volSaklar1 = input.jmlSaklar1;
-    final int volSaklar2 = input.jmlSaklar2;
-    final int volStopKontak = input.jmlStopKontak;
-
-    return HasilMenuF(volCatTembok: volCatTembok, volCatPlafon: volCatPlafon, volCatKayu: volCatKayu, volLampu: volLampu, volSaklar1: volSaklar1, volSaklar2: volSaklar2, volStopKontak: volStopKontak, dihitungPada: DateTime.now());
+    return HasilMenuF(
+      volCatTembok: volCatTembok, volCatPlafon: volCatPlafon,
+      volCatKayu: volCatKayu, volLampu: input.jmlLampu,
+      volSaklar1: input.jmlSaklar1, volSaklar2: input.jmlSaklar2,
+      volStopKontak: input.jmlStopKontak, dihitungPada: DateTime.now(),
+    );
   }
 
+  /// Kalkulasi material & upah menggunakan koefisien dari [k] (synchronous).
+  /// [k] berasal dari KoefisienProvider atau snapshot proyek — BUKAN fetch langsung.
   ({RekapMaterial rekap, HasilMenuG menuG}) hitungMaterialDanUpah({
     required HasilMenuA a, required HasilMenuB b, required HasilMenuC c,
     required HasilMenuD d, required HasilMenuE e, required HasilMenuF f,
-    required Map<String, double> hargaMaterial, required HargaUpah hargaUpah,
+    required Map<String, double> hargaMaterial,
+    required HargaUpah hargaUpah,
+    required KoefisienAktif k,
   }) {
-    // Akumulasi OH
-    double totalOhPekerja = 0; double totalOhTukang = 0; double totalOhMandor = 0;
+    // ── Akumulasi OH ──
+    double totalOhPekerja = 0;
+    double totalOhTukang = 0;
+    double totalOhMandor = 0;
 
-    totalOhPekerja += a.volBersih * 0.100; totalOhMandor += a.volBersih * 0.050;
-    totalOhPekerja += a.volBouwplank * 0.100; totalOhTukang += a.volBouwplank * 0.100; totalOhMandor += a.volBouwplank * 0.005;
-    
+    totalOhPekerja += a.volBersih * k.ohPekerjaBersih;
+    totalOhMandor += a.volBersih * k.ohMandorBersih;
+
+    totalOhPekerja += a.volBouwplank * k.ohPekerjaBouwplank;
+    totalOhTukang += a.volBouwplank * k.ohTukangBouwplank;
+    totalOhMandor += a.volBouwplank * k.ohMandorBouwplank;
+
     final double volGalianTotal = a.volGalianMenerus + a.volGalianTapak;
-    totalOhPekerja += volGalianTotal * 0.750; totalOhMandor += volGalianTotal * 0.025;
-    
+    totalOhPekerja += volGalianTotal * k.ohPekerjaGalian;
+    totalOhMandor += volGalianTotal * k.ohMandorGalian;
+
     final double volPasirTotal = a.volPasirMenerus + a.volPasirTapak;
-    totalOhPekerja += volPasirTotal * 0.300; totalOhMandor += volPasirTotal * 0.010;
-    
+    totalOhPekerja += volPasirTotal * k.ohPekerjaPasirUrug;
+    totalOhMandor += volPasirTotal * k.ohMandorPasirUrug;
+
     final double volAanstampTotal = a.volAanstampMenerus + a.volAanstampTapak;
-    totalOhPekerja += volAanstampTotal * 0.780; totalOhTukang += volAanstampTotal * 0.390; totalOhMandor += volAanstampTotal * 0.039;
-    
-    totalOhPekerja += a.volBatuKali * 1.500; totalOhTukang += a.volBatuKali * 0.750; totalOhMandor += a.volBatuKali * 0.075;
-    
+    totalOhPekerja += volAanstampTotal * k.ohPekerjaAanstamp;
+    totalOhTukang += volAanstampTotal * k.ohTukangAanstamp;
+    totalOhMandor += volAanstampTotal * k.ohMandorAanstamp;
+
+    totalOhPekerja += a.volBatuKali * k.ohPekerjaBatuKali;
+    totalOhTukang += a.volBatuKali * k.ohTukangBatuKali;
+    totalOhMandor += a.volBatuKali * k.ohMandorBatuKali;
+
     final double volUrugTotal = a.volUrugMenerus + a.volUrugTapak;
-    totalOhPekerja += volUrugTotal * 0.250; totalOhMandor += volUrugTotal * 0.083;
-    
-    totalOhPekerja += a.volBetonTapak * 1.650; totalOhTukang += a.volBetonTapak * 0.275; totalOhMandor += a.volBetonTapak * 0.083;
-    
-    totalOhPekerja += b.volSloof * 1.650; totalOhTukang += b.volSloof * 0.275; totalOhMandor += b.volSloof * 0.083;
-    totalOhPekerja += b.volKolom * 1.650; totalOhTukang += b.volKolom * 0.275; totalOhMandor += b.volKolom * 0.083;
-    totalOhPekerja += b.volRingBalok * 1.650; totalOhTukang += b.volRingBalok * 0.275; totalOhMandor += b.volRingBalok * 0.083;
-    
-    totalOhPekerja += b.volDinding * 0.300; totalOhTukang += b.volDinding * 0.100; totalOhMandor += b.volDinding * 0.015;
-    totalOhPekerja += b.volPlester * 0.300; totalOhTukang += b.volPlester * 0.150; totalOhMandor += b.volPlester * 0.015;
-    totalOhPekerja += b.volAcian * 0.200; totalOhTukang += b.volAcian * 0.100; totalOhMandor += b.volAcian * 0.010;
-    
-    totalOhPekerja += c.volTimbunan * 0.300; totalOhMandor += c.volTimbunan * 0.010;
-    totalOhPekerja += c.volPasirLantai * 0.300; totalOhMandor += c.volPasirLantai * 0.010;
-    totalOhPekerja += c.volCorLantai * 1.650; totalOhTukang += c.volCorLantai * 0.275; totalOhMandor += c.volCorLantai * 0.083;
-    totalOhPekerja += c.volKeramik * 0.700; totalOhTukang += c.volKeramik * 0.350; totalOhMandor += c.volKeramik * 0.035;
-    
-    totalOhPekerja += d.volKusenTotal * 7.000; totalOhTukang += d.volKusenTotal * 21.000; totalOhMandor += d.volKusenTotal * 0.350;
-    totalOhPekerja += d.volDaunPintu * 1.000; totalOhTukang += d.volDaunPintu * 3.000; totalOhMandor += d.volDaunPintu * 0.050;
-    totalOhPekerja += d.jmlKunci * 0.005; totalOhTukang += d.jmlKunci * 0.500; totalOhMandor += d.jmlKunci * 0.003;
-    totalOhPekerja += d.jmlEngselPintu * 0.015; totalOhTukang += d.jmlEngselPintu * 0.150; totalOhMandor += d.jmlEngselPintu * 0.0008;
-    totalOhPekerja += d.volDaunJendela * 0.800; totalOhTukang += d.volDaunJendela * 2.400; totalOhMandor += d.volDaunJendela * 0.040;
-    totalOhPekerja += d.volKaca * 0.015; totalOhTukang += d.volKaca * 0.150; totalOhMandor += d.volKaca * 0.0008;
-    totalOhPekerja += d.jmlEngselJendela * 0.015; totalOhTukang += d.jmlEngselJendela * 0.150; totalOhMandor += d.jmlEngselJendela * 0.0008;
-    
-    totalOhPekerja += e.volPlafon * 0.050; totalOhTukang += e.volPlafon * 0.050; totalOhMandor += e.volPlafon * 0.003;
-    totalOhPekerja += e.volPlafon * 0.100; totalOhTukang += e.volPlafon * 0.100; totalOhMandor += e.volPlafon * 0.005;
-    totalOhPekerja += e.volListPlafon * 0.050; totalOhTukang += e.volListPlafon * 0.050; totalOhMandor += e.volListPlafon * 0.003;
-    totalOhPekerja += e.volRangkaAtap * 0.200; totalOhTukang += e.volRangkaAtap * 0.200; totalOhMandor += e.volRangkaAtap * 0.010;
-    totalOhPekerja += e.volGenteng * 0.120; totalOhTukang += e.volGenteng * 0.060; totalOhMandor += e.volGenteng * 0.006;
-    totalOhPekerja += e.volListplank * 0.100; totalOhTukang += e.volListplank * 0.200; totalOhMandor += e.volListplank * 0.005;
-    totalOhPekerja += e.volNok * 0.150; totalOhTukang += e.volNok * 0.075; totalOhMandor += e.volNok * 0.008;
-    
+    totalOhPekerja += volUrugTotal * k.ohPekerjaUrug;
+    totalOhMandor += volUrugTotal * k.ohMandorUrug;
+
+    totalOhPekerja += a.volBetonTapak * k.ohPekerjaBetonTapak;
+    totalOhTukang += a.volBetonTapak * k.ohTukangBetonTapak;
+    totalOhMandor += a.volBetonTapak * k.ohMandorBetonTapak;
+
+    totalOhPekerja += b.volSloof * k.ohPekerjaSloof;
+    totalOhTukang += b.volSloof * k.ohTukangSloof;
+    totalOhMandor += b.volSloof * k.ohMandorSloof;
+
+    totalOhPekerja += b.volKolom * k.ohPekerjaKolom;
+    totalOhTukang += b.volKolom * k.ohTukangKolom;
+    totalOhMandor += b.volKolom * k.ohMandorKolom;
+
+    totalOhPekerja += b.volRingBalok * k.ohPekerjaRingBalok;
+    totalOhTukang += b.volRingBalok * k.ohTukangRingBalok;
+    totalOhMandor += b.volRingBalok * k.ohMandorRingBalok;
+
+    totalOhPekerja += b.volDinding * k.ohPekerjaDinding;
+    totalOhTukang += b.volDinding * k.ohTukangDinding;
+    totalOhMandor += b.volDinding * k.ohMandorDinding;
+
+    totalOhPekerja += b.volPlester * k.ohPekerjaPlester;
+    totalOhTukang += b.volPlester * k.ohTukangPlester;
+    totalOhMandor += b.volPlester * k.ohMandorPlester;
+
+    totalOhPekerja += b.volAcian * k.ohPekerjaAcian;
+    totalOhTukang += b.volAcian * k.ohTukangAcian;
+    totalOhMandor += b.volAcian * k.ohMandorAcian;
+
+    totalOhPekerja += c.volTimbunan * k.ohPekerjaTimbunan;
+    totalOhMandor += c.volTimbunan * k.ohMandorTimbunan;
+
+    totalOhPekerja += c.volPasirLantai * k.ohPekerjaPasirLantai;
+    totalOhMandor += c.volPasirLantai * k.ohMandorPasirLantai;
+
+    totalOhPekerja += c.volCorLantai * k.ohPekerjaCorLantai;
+    totalOhTukang += c.volCorLantai * k.ohTukangCorLantai;
+    totalOhMandor += c.volCorLantai * k.ohMandorCorLantai;
+
+    totalOhPekerja += c.volKeramik * k.ohPekerjaKeramik;
+    totalOhTukang += c.volKeramik * k.ohTukangKeramik;
+    totalOhMandor += c.volKeramik * k.ohMandorKeramik;
+
+    totalOhPekerja += d.volKusenTotal * k.ohPekerjaKusen;
+    totalOhTukang += d.volKusenTotal * k.ohTukangKusen;
+    totalOhMandor += d.volKusenTotal * k.ohMandorKusen;
+
+    totalOhPekerja += d.volDaunPintu * k.ohPekerjaDaunPintu;
+    totalOhTukang += d.volDaunPintu * k.ohTukangDaunPintu;
+    totalOhMandor += d.volDaunPintu * k.ohMandorDaunPintu;
+
+    totalOhPekerja += d.jmlKunci * k.ohPekerjaKunci;
+    totalOhTukang += d.jmlKunci * k.ohTukangKunci;
+    totalOhMandor += d.jmlKunci * k.ohMandorKunci;
+
+    totalOhPekerja += d.jmlEngselPintu * k.ohPekerjaEngselPintu;
+    totalOhTukang += d.jmlEngselPintu * k.ohTukangEngselPintu;
+    totalOhMandor += d.jmlEngselPintu * k.ohMandorEngselPintu;
+
+    totalOhPekerja += d.volDaunJendela * k.ohPekerjaDaunJendela;
+    totalOhTukang += d.volDaunJendela * k.ohTukangDaunJendela;
+    totalOhMandor += d.volDaunJendela * k.ohMandorDaunJendela;
+
+    totalOhPekerja += d.volKaca * k.ohPekerjaKaca;
+    totalOhTukang += d.volKaca * k.ohTukangKaca;
+    totalOhMandor += d.volKaca * k.ohMandorKaca;
+
+    totalOhPekerja += d.jmlEngselJendela * k.ohPekerjaEngselJendela;
+    totalOhTukang += d.jmlEngselJendela * k.ohTukangEngselJendela;
+    totalOhMandor += d.jmlEngselJendela * k.ohMandorEngselJendela;
+
+    // Rangka plafon (pasang hollow) & gypsum — 2 pekerjaan terpisah
+    totalOhPekerja += e.volPlafon * k.ohPekerjaRangkaPlafon;
+    totalOhTukang += e.volPlafon * k.ohTukangRangkaPlafon;
+    totalOhMandor += e.volPlafon * k.ohMandorRangkaPlafon;
+
+    totalOhPekerja += e.volPlafon * k.ohPekerjaGypsum;
+    totalOhTukang += e.volPlafon * k.ohTukangGypsum;
+    totalOhMandor += e.volPlafon * k.ohMandorGypsum;
+
+    totalOhPekerja += e.volListPlafon * k.ohPekerjaListPlafon;
+    totalOhTukang += e.volListPlafon * k.ohTukangListPlafon;
+    totalOhMandor += e.volListPlafon * k.ohMandorListPlafon;
+
+    totalOhPekerja += e.volRangkaAtap * k.ohPekerjaRangkaAtap;
+    totalOhTukang += e.volRangkaAtap * k.ohTukangRangkaAtap;
+    totalOhMandor += e.volRangkaAtap * k.ohMandorRangkaAtap;
+
+    totalOhPekerja += e.volGenteng * k.ohPekerjaGenteng;
+    totalOhTukang += e.volGenteng * k.ohTukangGenteng;
+    totalOhMandor += e.volGenteng * k.ohMandorGenteng;
+
+    totalOhPekerja += e.volListplank * k.ohPekerjaListplank;
+    totalOhTukang += e.volListplank * k.ohTukangListplank;
+    totalOhMandor += e.volListplank * k.ohMandorListplank;
+
+    totalOhPekerja += e.volNok * k.ohPekerjaNok;
+    totalOhTukang += e.volNok * k.ohTukangNok;
+    totalOhMandor += e.volNok * k.ohMandorNok;
+
     final double volCatTembokPlafon = f.volCatTembok + f.volCatPlafon;
-    totalOhPekerja += volCatTembokPlafon * 0.020; totalOhTukang += volCatTembokPlafon * 0.063; totalOhMandor += volCatTembokPlafon * 0.0025;
-    totalOhPekerja += f.volCatKayu * 0.070; totalOhTukang += f.volCatKayu * 0.009; totalOhMandor += f.volCatKayu * 0.003;
+    totalOhPekerja += volCatTembokPlafon * k.ohPekerjaCatTembok;
+    totalOhTukang += volCatTembokPlafon * k.ohTukangCatTembok;
+    totalOhMandor += volCatTembokPlafon * k.ohMandorCatTembok;
+
+    totalOhPekerja += f.volCatKayu * k.ohPekerjaCatKayu;
+    totalOhTukang += f.volCatKayu * k.ohTukangCatKayu;
+    totalOhMandor += f.volCatKayu * k.ohMandorCatKayu;
 
     final double biayaUpahPekerja = totalOhPekerja * hargaUpah.pekerja;
     final double biayaUpahTukang = totalOhTukang * hargaUpah.tukang;
@@ -174,50 +292,49 @@ class LayananPerhitungan {
       totalBiayaUpah: totalBiayaUpah, dihitungPada: DateTime.now(),
     );
 
-    // rekap material & hitung rincian biaya UI
+    // ── Rekap Material (menggunakan koefisien dari k) ──
     double hp(String id) => hargaMaterial[id] ?? 0;
 
-    final double tanahTimbun = c.volTimbunan * 1.200;
-    final double batuKali = (a.volAanstampMenerus + a.volAanstampTapak) * 1.200 + a.volBatuKali * 1.200;
-    final double kerikil = a.volBetonTapak * 1029 + (b.volSloof + b.volKolom + b.volRingBalok) * 1029 + c.volCorLantai * 999;
-    final double pasirUrug = (a.volPasirMenerus + a.volPasirTapak) * 1.200 + (a.volAanstampMenerus + a.volAanstampTapak) * 0.432 + c.volPasirLantai * 1.200;
-    final double pasirPasang = a.volBatuKali * 0.520 + b.volDinding * 0.043 + b.volPlester * 0.024 + c.volKeramik * 0.045;
-    final double pasirBeton = a.volBetonTapak * 760 + (b.volSloof + b.volKolom + b.volRingBalok) * 760 + c.volCorLantai * 869;
-    final double semen = a.volBatuKali * 163.0 + (a.volBetonTapak + b.volSloof + b.volKolom + b.volRingBalok) * 326 + b.volDinding * 11.5 + b.volPlester * 6.24 + b.volAcian * 3.25 + c.volCorLantai * 247 + c.volKeramik * 9.80;
-    final double bataMerah = b.volDinding * 70;
-    final double besiPolos = b.volSloof * 80.94 + b.volKolom * 203.6 + b.volRingBalok * 194.0;
-    final double hollow4x4 = e.volPlafon * 0.400;
-    final double hollow2x4 = e.volPlafon * 0.400;
-    final double profilC75 = e.volRangkaAtap * 1.250;
-    final double rengBaja = e.volRangkaAtap * 1.500;
-    final double kayuBalok57 = a.volBouwplank * 0.012;
-    final double papanBekisting = a.volBouwplank * 0.007 + b.volSloof * 13.33 + b.volKolom * 15.4 + b.volRingBalok * 13.33;
-    final double balkKayuKelas1 = d.volKusenTotal * 1.100;
-    final double balkKayuKelas2 = d.volDaunPintu * 0.040;
-    final double papanKayuKelas2 = d.volDaunJendela * 0.024;
-    final double papanListplank = e.volListplank * 0.011;
-    final double gentengGalvalum = e.volGenteng * 1.050;
-    final double nokGalvalum = e.volNok * 1.050;
-    final double papanGypsum = e.volPlafon * 0.364;
-    final double listProfilKayu = e.volListPlafon * 1.050;
-    final double kaca5mm = d.volKaca * 1.100;
+    final double tanahTimbun = c.volTimbunan * k.matTanahTimbun;
+    final double batuKali = (a.volAanstampMenerus + a.volAanstampTapak) * k.matBatuKali + a.volBatuKali * k.matBatuKali;
+    final double kerikil = a.volBetonTapak * k.matKerikilBeton + (b.volSloof + b.volKolom + b.volRingBalok) * k.matKerikilBeton + c.volCorLantai * k.matKerikilLantai;
+    final double pasirUrug = (a.volPasirMenerus + a.volPasirTapak) * k.matPasirUrug + (a.volAanstampMenerus + a.volAanstampTapak) * k.matAanstampPasirUrug + c.volPasirLantai * k.matPasirUrug;
+    final double pasirPasang = a.volBatuKali * k.matPasirPasangBatuKali + b.volDinding * k.matPasirPasangDinding + b.volPlester * k.matPasirPasangPlester + c.volKeramik * k.matPasirPasangKeramik;
+    final double pasirBeton = a.volBetonTapak * k.matPasirBeton + (b.volSloof + b.volKolom + b.volRingBalok) * k.matPasirBeton + c.volCorLantai * k.matPasirBetonLantai;
+    final double semen = a.volBatuKali * k.matSemenBatuKali + (a.volBetonTapak + b.volSloof + b.volKolom + b.volRingBalok) * k.matSemenBeton + b.volDinding * k.matSemenDinding + b.volPlester * k.matSemenPlester + b.volAcian * k.matSemenAcian + c.volCorLantai * k.matSemenLantai + c.volKeramik * k.matSemenKeramik;
+    final double bataMerah = b.volDinding * k.matBataMerah;
+    final double besiPolos = b.volSloof * k.matBesiSloof + b.volKolom * k.matBesiKolom + b.volRingBalok * k.matBesiRingBalok;
+    final double hollow4x4 = e.volPlafon * k.matHollow4x4;
+    final double hollow2x4 = e.volPlafon * k.matHollow2x4;
+    final double profilC75 = e.volRangkaAtap * k.matProfilC75;
+    final double rengBaja = e.volRangkaAtap * k.matRengBaja;
+    final double kayuBalok57 = a.volBouwplank * k.matKayuBalok57;
+    final double papanBekisting = a.volBouwplank * k.matPapanBekisting1 + b.volSloof * k.matPapanBekistingSloof + b.volKolom * k.matPapanBekistingKolom + b.volRingBalok * k.matPapanBekistingRing;
+    final double balkKayuKelas1 = d.volKusenTotal * k.matBalkKayuKelas1;
+    final double balkKayuKelas2 = d.volDaunPintu * k.matBalkKayuKelas2;
+    final double papanKayuKelas2 = d.volDaunJendela * k.matPapanKayuKelas2;
+    final double papanListplank = e.volListplank * k.matPapanListplank;
+    final double gentengGalvalum = e.volGenteng * k.matGentengGalvalum;
+    final double nokGalvalum = e.volNok * k.matNokGalvalum;
+    final double papanGypsum = e.volPlafon * k.matPapanGypsum;
+    final double listProfilKayu = e.volListPlafon * k.matListProfilKayu;
+    final double kaca5mm = d.volKaca * k.matKaca5mm;
     final double kunciPintu = d.jmlKunci.toDouble();
     final double engselPintu = d.jmlEngselPintu.toDouble();
     final double engselJendela = d.jmlEngselJendela.toDouble();
-    final double keramik = c.volKeramik * 6.63;
-    final double plamirTembok = volCatTembokPlafon * 0.100;
-    final double catDasarTembok = volCatTembokPlafon * 0.100;
-    final double catTembok = volCatTembokPlafon * 0.260;
-    final double catMenie = f.volCatKayu * 0.200;
-    final double plamirKayu = f.volCatKayu * 0.150;
-    final double catDasarKayu = f.volCatKayu * 0.170;
-    final double catKayu = f.volCatKayu * 0.260;
+    final double keramik = c.volKeramik * k.matKeramik;
+    final double plamirTembok = volCatTembokPlafon * k.matPlamirTembok;
+    final double catDasarTembok = volCatTembokPlafon * k.matCatDasarTembok;
+    final double catTembok = volCatTembokPlafon * k.matCatTembok;
+    final double catMenie = f.volCatKayu * k.matCatMenie;
+    final double plamirKayu = f.volCatKayu * k.matPlamirKayu;
+    final double catDasarKayu = f.volCatKayu * k.matCatDasarKayu;
+    final double catKayu = f.volCatKayu * k.matCatKayu;
     final double lampuLed = f.volLampu.toDouble();
     final double saklarTunggal = f.volSaklar1.toDouble();
     final double saklarGanda = f.volSaklar2.toDouble();
     final double stopKontak = f.volStopKontak.toDouble();
 
-    // Hitung Total Keseluruhan
     final double totalBiaya =
         tanahTimbun * hp('tanah_timbun') + batuKali * hp('batu_kali') + kerikil * hp('kerikil') +
         pasirUrug * hp('pasir_urug') + pasirPasang * hp('pasir_pasang') + pasirBeton * hp('pasir_beton') +
@@ -233,16 +350,16 @@ class LayananPerhitungan {
         catDasarKayu * hp('cat_dasar_kayu') + catKayu * hp('cat_kayu') + lampuLed * hp('lampu_led_18w') +
         saklarTunggal * hp('saklar_tunggal') + saklarGanda * hp('saklar_ganda') + stopKontak * hp('stop_kontak');
 
-    // Hitung Rincian Kartu UI
-    final biayaPasirPondasi = ((a.volPasirMenerus + a.volPasirTapak) * 1.200 * hp('pasir_urug')) + (c.volPasirLantai * 1.200 * hp('pasir_urug'));
-    final biayaAanstamping = (a.volAanstampMenerus + a.volAanstampTapak) * 1.200 * hp('batu_kali') + (a.volAanstampMenerus + a.volAanstampTapak) * 0.432 * hp('pasir_urug');
-    final biayaBatuKali = (a.volBatuKali * 1.200 * hp('batu_kali')) + (a.volBatuKali * 163.0 * hp('semen_pc')) + (a.volBatuKali * 0.520 * hp('pasir_pasang'));
-    final biayaBetonTapak = (a.volBetonTapak * 1029 * hp('kerikil')) + (a.volBetonTapak * 760 * hp('pasir_beton')) + (a.volBetonTapak * 326 * hp('semen_pc'));
+    // Rincian kartu UI (sama persis logikanya, hanya koefisien dari k)
+    final biayaPasirPondasi = ((a.volPasirMenerus + a.volPasirTapak) * k.matPasirUrug * hp('pasir_urug')) + (c.volPasirLantai * k.matPasirUrug * hp('pasir_urug'));
+    final biayaAanstamping = (a.volAanstampMenerus + a.volAanstampTapak) * k.matBatuKali * hp('batu_kali') + (a.volAanstampMenerus + a.volAanstampTapak) * k.matAanstampPasirUrug * hp('pasir_urug');
+    final biayaBatuKali = (a.volBatuKali * k.matBatuKali * hp('batu_kali')) + (a.volBatuKali * k.matSemenBatuKali * hp('semen_pc')) + (a.volBatuKali * k.matPasirPasangBatuKali * hp('pasir_pasang'));
+    final biayaBetonTapak = (a.volBetonTapak * k.matKerikilBeton * hp('kerikil')) + (a.volBetonTapak * k.matPasirBeton * hp('pasir_beton')) + (a.volBetonTapak * k.matSemenBeton * hp('semen_pc'));
     final biayaBesi = besiPolos * hp('besi_polos');
-    final biayaDinding = (bataMerah * hp('bata_merah')) + (b.volDinding * 11.5 * hp('semen_pc')) + (b.volDinding * 0.043 * hp('pasir_pasang'));
-    final biayaSemenPlester = (b.volPlester * 6.24 * hp('semen_pc')) + (b.volPlester * 0.024 * hp('pasir_pasang')) + (b.volAcian * 3.25 * hp('semen_pc'));
+    final biayaDinding = (bataMerah * hp('bata_merah')) + (b.volDinding * k.matSemenDinding * hp('semen_pc')) + (b.volDinding * k.matPasirPasangDinding * hp('pasir_pasang'));
+    final biayaSemenPlester = (b.volPlester * k.matSemenPlester * hp('semen_pc')) + (b.volPlester * k.matPasirPasangPlester * hp('pasir_pasang')) + (b.volAcian * k.matSemenAcian * hp('semen_pc'));
     final biayaTanahTimbun = tanahTimbun * hp('tanah_timbun');
-    final biayaKeramik = (keramik * hp('keramik_40x40')) + (c.volKeramik * 9.80 * hp('semen_pc')) + (c.volKeramik * 0.045 * hp('pasir_pasang'));
+    final biayaKeramik = (keramik * hp('keramik_40x40')) + (c.volKeramik * k.matSemenKeramik * hp('semen_pc')) + (c.volKeramik * k.matPasirPasangKeramik * hp('pasir_pasang'));
     final biayaKusen = balkKayuKelas1 * hp('balok_kayu_kelas1');
     final biayaDaunPintu = balkKayuKelas2 * hp('balok_kayu_kelas2');
     final biayaDaunJendela = papanKayuKelas2 * hp('papan_kayu_kelas2');
@@ -273,7 +390,6 @@ class LayananPerhitungan {
       catDasarKayu_kg: catDasarKayu, catKayu_kg: catKayu, lampuLed_buah: lampuLed,
       saklarTunggal_buah: saklarTunggal, saklarGanda_buah: saklarGanda, stopKontak_buah: stopKontak,
       totalBiayaMaterial: totalBiaya, dihitungPada: DateTime.now(),
-      
       biayaPasirPondasi: biayaPasirPondasi, biayaAanstamping: biayaAanstamping, biayaBatuKali: biayaBatuKali,
       biayaBetonTapak: biayaBetonTapak, biayaBesi: biayaBesi, biayaDinding: biayaDinding,
       biayaSemenPlester: biayaSemenPlester, biayaTanahTimbun: biayaTanahTimbun, biayaKeramik: biayaKeramik,
@@ -288,11 +404,18 @@ class LayananPerhitungan {
   }
 
   Future<({HasilMenuA a, HasilMenuB b, HasilMenuC c, HasilMenuD d, HasilMenuE e, HasilMenuF f, HasilMenuG g, RekapMaterial rekap})> hitungSemua({
-    required InputSurveyor input, required Map<String, double> hargaMaterial, required HargaUpah hargaUpah,
+    required InputSurveyor input,
+    required Map<String, double> hargaMaterial,
+    required HargaUpah hargaUpah,
+    required KoefisienAktif k,
   }) async {
     final a = hitungMenuA(input); final b = hitungMenuB(input); final c = hitungMenuC(input);
-    final d = hitungMenuD(input); final e = hitungMenuE(input); final f = hitungMenuF(hasilB: b, hasilD: d, hasilE: e, input: input);
-    final (:rekap, :menuG) = hitungMaterialDanUpah(a: a, b: b, c: c, d: d, e: e, f: f, hargaMaterial: hargaMaterial, hargaUpah: hargaUpah);
+    final d = hitungMenuD(input); final e = hitungMenuE(input);
+    final f = hitungMenuF(hasilB: b, hasilD: d, hasilE: e, input: input);
+    final (:rekap, :menuG) = hitungMaterialDanUpah(
+      a: a, b: b, c: c, d: d, e: e, f: f,
+      hargaMaterial: hargaMaterial, hargaUpah: hargaUpah, k: k,
+    );
     return (a: a, b: b, c: c, d: d, e: e, f: f, g: menuG, rekap: rekap);
   }
 }

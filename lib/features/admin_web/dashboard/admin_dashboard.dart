@@ -10,6 +10,7 @@ import '../user_management/user_management_page.dart';
 import '../settings/settings_page.dart';
 import '../history/history_page.dart';
 import '../master_data/price_page.dart';
+import '../master_data/koefisien_page.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -21,16 +22,15 @@ class AdminDashboard extends StatefulWidget {
 class _AdminDashboardState extends State<AdminDashboard> {
   int _selectedIndex = 0;
 
-  // Dipindah ke method agar bisa pass _navigateTo sebagai callback ke DashboardPage
   List<Widget> get _pages => [
-        DashboardPage(onNavigate: _navigateTo),
-        const ProjectPage(),
-        const PricePage(),
-        const UserManagementPage(),
-        const HistoryPage(),
-        const SettingsPage(),
-      ];
-
+    DashboardPage(onNavigate: _navigateTo),
+    const ProjectPage(),
+    const PricePage(),
+    const KoefisienPage(),
+    const UserManagementPage(),
+    const HistoryPage(),
+    const SettingsPage(),
+  ];
   void _navigateTo(int index) {
     setState(() => _selectedIndex = index);
   }
@@ -50,19 +50,30 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   padding: const EdgeInsets.all(24.0),
                   child: Row(
                     children: [
-                      const Icon(Icons.apartment, color: Colors.white, size: 30),
+                      const Icon(
+                        Icons.apartment,
+                        color: Colors.white,
+                        size: 30,
+                      ),
                       const SizedBox(width: 10),
                       const Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('QUICK COUNT',
-                                style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold)),
-                            Text('Admin Panel',
-                                style: TextStyle(
-                                    color: Colors.white70, fontSize: 10)),
+                            Text(
+                              'QUICK COUNT',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            Text(
+                              'Admin Panel',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 10,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -74,9 +85,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 _buildMenuItem(0, Icons.dashboard, 'Dashboard'),
                 _buildMenuItem(1, Icons.folder_open, 'Proyek'),
                 _buildMenuItem(2, Icons.storage, 'Master Harga'),
-                _buildMenuItem(3, Icons.people, 'Manajemen Akun'),
-                _buildMenuItem(4, Icons.history, 'Riwayat Aktivitas'),
-                _buildMenuItem(5, Icons.settings, 'Pengaturan'),
+                _buildMenuItem(3, Icons.calculate_outlined, 'Koefisien SNI'),
+                _buildMenuItem(4, Icons.people, 'Manajemen Akun'),
+                _buildMenuItem(5, Icons.history, 'Riwayat'),
+                _buildMenuItem(6, Icons.settings, 'Pengaturan'),
 
                 const Spacer(),
 
@@ -88,8 +100,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       if (mounted) {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(
-                              builder: (_) => const LoginPage()),
+                          MaterialPageRoute(builder: (_) => const LoginPage()),
                         );
                       }
                     },
@@ -120,13 +131,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget _buildMenuItem(int index, IconData icon, String title) {
     final isSelected = _selectedIndex == index;
     return ListTile(
-      leading: Icon(icon,
-          color: isSelected ? Colors.white : Colors.white70),
-      title: Text(title,
-          style:
-              TextStyle(color: isSelected ? Colors.white : Colors.white70)),
-      tileColor:
-          isSelected ? Colors.white.withOpacity(0.1) : null,
+      leading: Icon(icon, color: isSelected ? Colors.white : Colors.white70),
+      title: Text(
+        title,
+        style: TextStyle(color: isSelected ? Colors.white : Colors.white70),
+      ),
+      tileColor: isSelected ? Colors.white.withOpacity(0.1) : null,
       onTap: () => _navigateTo(index),
     );
   }

@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../shared/models/model_rekap_dan_lainnya.dart';
 import '../../../shared/services/layanan_master_harga.dart';
 import '../../../shared/utils/styles.dart';
+import '../../../shared/services/layanan_notifikasi.dart';
 
 class PricePage extends StatefulWidget {
   const PricePage({super.key});
@@ -16,15 +17,15 @@ class PricePage extends StatefulWidget {
 
 class _PricePageState extends State<PricePage> {
   final LayananMasterHarga _layananHarga = LayananMasterHarga();
+   final LayananNotifikasi _layananNotif = LayananNotifikasi();
   final TextEditingController _searchController = TextEditingController();
-
-  // 0 = Harga Material, 1 = Harga Upah Pekerja
+  
   int _activeTab = 0;
   String _searchQuery = '';
   bool _isSeedLoading = false;
 
   final _formatRp = NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
-  final _formatTanggal = DateFormat('dd/MM/yyyy HH:mm');
+  final _formatTanggal = DateFormat('dd MMM yyyy, HH:mm');
 
   @override
   void initState() {
@@ -40,7 +41,6 @@ class _PricePageState extends State<PricePage> {
     super.dispose();
   }
 
-  // Seed data
   Future<void> _jalankanSeedData() async {
     final konfirmasi = await showDialog<bool>(
       context: context,
@@ -88,7 +88,6 @@ class _PricePageState extends State<PricePage> {
     }
   }
 
-  // Dialog Edit Material
   void _showEditMaterialDialog(HargaMaterial item) {
     final controller = TextEditingController(text: item.hargaSatuan.toStringAsFixed(0));
     final formKey = GlobalKey<FormState>();
@@ -107,7 +106,6 @@ class _PricePageState extends State<PricePage> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // info item — read only
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -162,15 +160,25 @@ class _PricePageState extends State<PricePage> {
 
                       try {
                         final idAdmin = FirebaseAuth.instance.currentUser?.uid ?? 'system';
+                        final hargaBaruVal = double.parse(controller.text);
+                        
                         final hargaBaru = HargaMaterial(
                           id: item.id,
                           nama: item.nama,
                           satuan: item.satuan,
-                          hargaSatuan: double.parse(controller.text),
+                          hargaSatuan: hargaBaruVal,
                           diperbaruidOleh: idAdmin,
                           diperbaruidPada: DateTime.now(),
                         );
+                        
                         await _layananHarga.simpanHargaMaterial(hargaBaru);
+
+                        await _layananNotif.catatPembaruan(
+                          judul: 'Pembaruan Harga: ${item.nama}',
+                          idAdmin: idAdmin,
+                          hargaLama: item.hargaSatuan, 
+                          hargaBaru: hargaBaruVal,     
+                        );
 
                         if (ctx.mounted) {
                           Navigator.pop(ctx);
@@ -201,7 +209,6 @@ class _PricePageState extends State<PricePage> {
     );
   }
 
-  // Dialog Edit Upah
   void _showEditUpahDialog(HargaUpah upah) {
     final pekController = TextEditingController(text: upah.pekerja.toStringAsFixed(0));
     final tukController = TextEditingController(text: upah.tukang.toStringAsFixed(0));
@@ -250,14 +257,48 @@ class _PricePageState extends State<PricePage> {
 
                       try {
                         final idAdmin = FirebaseAuth.instance.currentUser?.uid ?? 'system';
+                        final pekerjaLama = upah.pekerja;
+                        final tukangLama = upah.tukang;
+                        final mandorLama = upah.mandor;
+                        final pekerjaBaru = double.parse(pekController.text);
+                        final tukangBaru = double.parse(tukController.text);
+                        final mandorBaru = double.parse(manController.text);
+
                         final upahBaru = HargaUpah(
-                          pekerja: double.parse(pekController.text),
-                          tukang: double.parse(tukController.text),
-                          mandor: double.parse(manController.text),
+                          pekerja: pekerjaBaru,
+                          tukang: tukangBaru,
+                          mandor: mandorBaru,
                           diperbaruidOleh: idAdmin,
                           diperbaruidPada: DateTime.now(),
                         );
+                        
                         await _layananHarga.simpanHargaUpah(upahBaru);
+
+                        // Diffing upah pekerja 1 1
+                        if ((pekerjaLama - pekerjaBaru).abs() > 0.01) {
+                          await _layananNotif.catatPembaruan(
+                            judul: 'Pembaruan Harga Upah: Pekerja',
+                            idAdmin: idAdmin,
+                            hargaLama: pekerjaLama,
+                            hargaBaru: pekerjaBaru,
+                          );
+                        }
+                        if ((tukangLama - tukangBaru).abs() > 0.01) {
+                          await _layananNotif.catatPembaruan(
+                            judul: 'Pembaruan Harga Upah: Tukang',
+                            idAdmin: idAdmin,
+                            hargaLama: tukangLama,
+                            hargaBaru: tukangBaru,
+                          );
+                        }
+                        if ((mandorLama - mandorBaru).abs() > 0.01) {
+                          await _layananNotif.catatPembaruan(
+                            judul: 'Pembaruan Harga Upah: Mandor',
+                            idAdmin: idAdmin,
+                            hargaLama: mandorLama,
+                            hargaBaru: mandorBaru,
+                          );
+                        }
 
                         if (ctx.mounted) {
                           Navigator.pop(ctx);
@@ -307,7 +348,6 @@ class _PricePageState extends State<PricePage> {
     );
   }
 
-  // Build
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -317,7 +357,6 @@ class _PricePageState extends State<PricePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header + tombol seed
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -335,7 +374,6 @@ class _PricePageState extends State<PricePage> {
                   ],
                 ),
                 const Spacer(),
-                // tombol seed — untuk inisialisasi awal
                 OutlinedButton.icon(
                   onPressed: _isSeedLoading ? null : _jalankanSeedData,
                   icon: _isSeedLoading
@@ -352,7 +390,6 @@ class _PricePageState extends State<PricePage> {
             ),
             const SizedBox(height: 24),
 
-            // Tab switch
             Container(
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
@@ -369,7 +406,6 @@ class _PricePageState extends State<PricePage> {
             ),
             const SizedBox(height: 20),
 
-            // Search bar material
             if (_activeTab == 0)
               SizedBox(
                 width: 400,
@@ -398,9 +434,11 @@ class _PricePageState extends State<PricePage> {
 
             if (_activeTab == 0) const SizedBox(height: 16),
 
-            // Konten tab
             Expanded(
-              child: _activeTab == 0 ? _buildTabelMaterial() : _buildPanelUpah(),
+              child: switch (_activeTab) {
+                0 => _buildTabelMaterial(),
+                _ => _buildPanelUpah(),
+              },
             ),
           ],
         ),
@@ -408,7 +446,6 @@ class _PricePageState extends State<PricePage> {
     );
   }
 
-  // Tab Material
   Widget _buildTabelMaterial() {
     return StreamBuilder<List<HargaMaterial>>(
       stream: _layananHarga.streamSemuaHargaMaterial(),
@@ -442,7 +479,6 @@ class _PricePageState extends State<PricePage> {
             borderRadius: BorderRadius.circular(12),
             child: Column(
               children: [
-                // Info row count
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   color: Colors.grey[50],
@@ -546,7 +582,6 @@ class _PricePageState extends State<PricePage> {
     );
   }
 
-  // Tab Upah
   Widget _buildPanelUpah() {
     return StreamBuilder<HargaUpah?>(
       stream: _layananHarga.streamHargaUpah(),
@@ -579,7 +614,6 @@ class _PricePageState extends State<PricePage> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Header panel
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -593,14 +627,12 @@ class _PricePageState extends State<PricePage> {
                   ),
                 ),
 
-                // Baris upah
                 _buildBarisUpah('Pekerja', upah.pekerja),
                 const Divider(height: 1, indent: 20, endIndent: 20),
                 _buildBarisUpah('Tukang', upah.tukang),
                 const Divider(height: 1, indent: 20, endIndent: 20),
                 _buildBarisUpah('Mandor', upah.mandor),
 
-                // Info + tombol edit
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
@@ -654,7 +686,6 @@ class _PricePageState extends State<PricePage> {
     );
   }
 
-  // Helper Widget
   Widget _buildTabButton(int index, String label) {
     final isActive = _activeTab == index;
     return GestureDetector(

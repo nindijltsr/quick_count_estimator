@@ -12,7 +12,6 @@ class _NamaKoleksi {
 class _NamaDokumen {
   static const data = 'data';
   static const material = 'material';
-
   static const menuA = 'persiapan_tanah_pondasi';
   static const menuB = 'struktur_dan_dinding';
   static const menuC = 'lantai_dan_timbunan';
@@ -80,6 +79,7 @@ class LayananProyek {
     await _tandaiStatusProyek(idProyek);
   }
 
+  /// Simpan semua hasil kalkulasi + snapshot harga & koefisien 
   Future<void> simpanSemuaHasil({
     required String idProyek,
     required HasilMenuA menuA,
@@ -90,6 +90,10 @@ class LayananProyek {
     required HasilMenuF menuF,
     required HasilMenuG menuG,
     required RekapMaterial rekap,
+    // Snapshot — wajib diisi saat simpan proyek baru atau refresh
+    Map<String, double> snapshotHargaMaterial = const {},
+    Map<String, double> snapshotHargaUpah = const {},
+    Map<String, double> snapshotKoefisien = const {},
   }) async {
     final batch = _db.batch();
 
@@ -102,12 +106,50 @@ class LayananProyek {
     batch.set(_refHasilMenu(idProyek, _NamaDokumen.menuG), menuG.keFirestore());
     batch.set(_refRekapMaterial(idProyek), rekap.keFirestore());
 
-    batch.update(_refProyek(idProyek), {
+    final Map<String, dynamic> updateProyek = {
       'status_perhitungan': 'selesai',
       'updated_at': FieldValue.serverTimestamp(),
-    });
+    };
+
+    // Hanya tulis snapshot jika ada isinya
+    if (snapshotHargaMaterial.isNotEmpty) {
+      updateProyek['snapshot_harga_material'] = snapshotHargaMaterial;
+      updateProyek['snapshot_harga_upah'] = snapshotHargaUpah;
+      updateProyek['snapshot_koefisien'] = snapshotKoefisien;
+      updateProyek['tanggal_snapshot_diambil'] = FieldValue.serverTimestamp();
+    }
+
+    batch.update(_refProyek(idProyek), updateProyek);
 
     await batch.commit();
+  }
+
+  /// Update snapshot - dipanggil saat user tekan "Refresh".
+  Future<void> perbaruiSnapshot({
+    required String idProyek,
+    required Map<String, double> snapshotHargaMaterial,
+    required Map<String, double> snapshotHargaUpah,
+    required Map<String, double> snapshotKoefisien,
+  }) async {
+    await _refProyek(idProyek).update({
+      'snapshot_harga_material': snapshotHargaMaterial,
+      'snapshot_harga_upah': snapshotHargaUpah,
+      'snapshot_koefisien': snapshotKoefisien,
+      'tanggal_snapshot_diambil': FieldValue.serverTimestamp(),
+    });
+  }
+
+  /// Ambil snapshot dari dokumen proyek — 0 Read ekstra jika proyek sudah di-fetch.
+  Future<Map<String, dynamic>?> ambilSnapshotProyek(String idProyek) async {
+    final doc = await _refProyek(idProyek).get();
+    if (!doc.exists || doc.data() == null) return null;
+    final d = doc.data()!;
+    return {
+      'snapshot_harga_material': d['snapshot_harga_material'],
+      'snapshot_harga_upah': d['snapshot_harga_upah'],
+      'snapshot_koefisien': d['snapshot_koefisien'],
+      'tanggal_snapshot_diambil': d['tanggal_snapshot_diambil'],
+    };
   }
 
   Future<HasilMenuA?> ambilHasilMenuA(String idProyek) async {
@@ -203,7 +245,7 @@ class LayananHistori {
         .snapshots()
         .map((snap) => snap.docs.map((d) => LogHistori.dariFirestore(d)).toList());
   }
-  
+
   Stream<List<LogHistori>> streamSemuaAktivitas({int limit = 100}) {
     return _db
         .collection('riwayatAktivitas')

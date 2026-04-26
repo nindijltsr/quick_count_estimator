@@ -3,9 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
 import '../../../shared/models/project_model.dart';
-import '../../../shared/models/model_rekap_dan_lainnya.dart';
+import '../../../shared/models/model_input_surveyor.dart';
 import '../../../shared/models/model_hasil_perhitungan.dart';
-import '../../../shared/services/layanan_master_harga.dart';
 import '../../../shared/utils/styles.dart';
 
 class ProjectDetailPage extends StatefulWidget {
@@ -18,54 +17,69 @@ class ProjectDetailPage extends StatefulWidget {
 }
 
 class _ProjectDetailPageState extends State<ProjectDetailPage> {
-  final LayananMasterHarga _layananHarga = LayananMasterHarga();
-
-  static final _formatRp =
-      NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+  static final _formatRp = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
   static final _formatTanggal = DateFormat('dd/MM/yyyy');
+  static final _formatAngka = NumberFormat('#,##0.##', 'id_ID');
 
-  static const _koleksiRekap = 'rekap_akhir';
-  static const _docRekap = 'material';
-  static const _koleksiHasil = 'hasil_perhitungan';
-  static const _docMenuG = 'estimasi_upah';
-
-  RekapMaterial? _rekap;
+  // Data dari Firestore
+  InputSurveyor? _input;
   HasilMenuG? _hasilG;
-  Map<String, HargaMaterial> _hargaMap = {};
   bool _isLoading = true;
   String? _error;
+
+  // Hasil kalkulasi volume
+  _VolumePerhitungan? _vol;
+
+  // Harga dari snapshot proyek
+  late Map<String, double> _snapshotHarga;
+  late Map<String, double> _snapshotKoefisien;
 
   @override
   void initState() {
     super.initState();
-    _muatSemuaData();
+    _snapshotHarga = widget.project.snapshotHargaMaterial;
+    _snapshotKoefisien = widget.project.snapshotKoefisien;
+    _muatData();
   }
 
-  // muat data
-  Future<void> _muatSemuaData() async {
+  Future<void> _muatData() async {
     try {
       final idProyek = widget.project.projectId;
-      final refProyek =
-          FirebaseFirestore.instance.collection('projects').doc(idProyek);
+      final refProyek = FirebaseFirestore.instance
+          .collection('projects')
+          .doc(idProyek);
 
       final results = await Future.wait([
-        refProyek.collection(_koleksiRekap).doc(_docRekap).get(),
-        refProyek.collection(_koleksiHasil).doc(_docMenuG).get(),
-        _layananHarga.streamSemuaHargaMaterial().first,
+        refProyek.collection('inputUser').doc('data').get(),
+        refProyek.collection('hasil_perhitungan').doc('estimasi_upah').get(),
       ]);
 
-      final rekapDoc = results[0] as DocumentSnapshot<Map<String, dynamic>>;
-      final hasilGDoc = results[1] as DocumentSnapshot<Map<String, dynamic>>;
-      final daftarHarga = results[2] as List<HargaMaterial>;
+      final inputDoc = results[0] as DocumentSnapshot<Map<String, dynamic>>;
+      final menuGDoc = results[1] as DocumentSnapshot<Map<String, dynamic>>;
+
+      InputSurveyor? input;
+      if (inputDoc.exists) {
+        input = InputSurveyor.dariFirestore(inputDoc);
+      }
+
+      HasilMenuG? hasilG;
+      if (menuGDoc.exists && menuGDoc.data() != null) {
+        hasilG = HasilMenuG.dariFirestore(menuGDoc.data()!);
+      }
+
+      _VolumePerhitungan? vol;
+      if (input != null) {
+        vol = _VolumePerhitungan.dariInput(input);
+      }
 
       setState(() {
-        _rekap = rekapDoc.exists
-            ? RekapMaterial.dariFirestore(rekapDoc.data()!)
-            : null;
-        _hasilG = hasilGDoc.exists
-            ? HasilMenuG.dariFirestore(hasilGDoc.data()!)
-            : null;
-        _hargaMap = {for (final h in daftarHarga) h.id: h};
+        _input = input;
+        _hasilG = hasilG;
+        _vol = vol;
         _isLoading = false;
       });
     } catch (e) {
@@ -75,6 +89,12 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       });
     }
   }
+
+  // Ambil harga dari snapshot 
+  double _hp(String id) => _snapshotHarga[id] ?? 0;
+
+  // Ambil koefisien dari snapshot 
+  double _k(String key) => _snapshotKoefisien[key] ?? 0.0;
 
   @override
   Widget build(BuildContext context) {
@@ -87,20 +107,22 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _error != null
-                    ? Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Text('Gagal memuat data: $_error',
-                              style: const TextStyle(color: Colors.red)),
-                        ))
-                    : _buildKonten(),
+                ? Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Text(
+                        'Gagal memuat data: $_error',
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  )
+                : _buildKonten(),
           ),
         ],
       ),
     );
   }
 
-  // top bar
   Widget _buildTopBar() {
     return Container(
       width: double.infinity,
@@ -115,20 +137,57 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
               children: [
                 const Icon(Icons.arrow_back, size: 18, color: Colors.black87),
                 const SizedBox(width: 6),
-                Text('Kembali ke daftar',
-                    style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+                Text(
+                  'Kembali ke daftar',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+                ),
               ],
             ),
           ),
+          const Spacer(),
+          if (widget.project.tanggalSnapshotDiambil != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.green[50],
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: Colors.green.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.lock_outline, size: 13, color: Colors.green[700]),
+                  const SizedBox(width: 5),
+                  Text(
+                    'Harga terkunci per ${_formatTanggal.format(widget.project.tanggalSnapshotDiambil!)}',
+                    style: TextStyle(fontSize: 11, color: Colors.green[700]),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
   }
 
-  // konten utama
   Widget _buildKonten() {
-    final rekap = _rekap;
+    final vol = _vol;
     final hasilG = _hasilG;
+    final snapshotTersedia = _snapshotHarga.isNotEmpty;
+
+    if (vol == null || !snapshotTersedia) {
+      return _buildBelumAda();
+    }
+
+    // Hitung sub-total per kelompok pekerjaan
+    final subA = _hitungSubTotalA(vol);
+    final subB = _hitungSubTotalB(vol);
+    final subC = _hitungSubTotalC(vol);
+    final subD = _hitungSubTotalD(vol);
+    final subE = _hitungSubTotalE(vol);
+    final subF = _hitungSubTotalF(vol);
+    final totalMaterial = subA + subB + subC + subD + subE + subF;
+    final totalUpah = hasilG?.totalBiayaUpah ?? 0;
+    final grandTotal = totalMaterial + totalUpah;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
@@ -138,193 +197,515 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
           _buildInfoProyek(),
           const SizedBox(height: 28),
 
-          if (rekap == null && hasilG == null)
-            _buildBelumAda()
-          else ...[
-            _buildHeaderSeksi('A. Analisis Estimasi Biaya'),
-            const SizedBox(height: 16),
-
-            if (rekap != null) ...[
-              _buildSubSeksi('1. Pekerjaan Persiapan', [
-                _Baris('Pembersihan Lapangan', rekap.tanahTimbun_m3, 'm²', 'tanah_timbun'),
-                _Baris('Pengukuran / Pemasangan Bouwplank', rekap.pasirUrug_m3, 'm\'', 'pasir_urug'),
-              ]),
-              _buildSubSeksi('2. Pekerjaan Tanah & Pondasi', [
-                _Baris('Urugan Pasir Pondasi', rekap.pasirUrug_m3, 'm³', 'pasir_urug'),
-                _Baris('Aanstamping Batu Kali', rekap.batuKali_m3, 'm³', 'batu_kali'),
-                _Baris('Pasangan Batu Kali 1:4', rekap.batuKali_m3, 'm³', 'batu_kali'),
-                _Baris('Beton Pondasi Tapak K-175 (Kerikil)', rekap.kerikil_kg, 'kg', 'kerikil'),
-                _Baris('Pasir Pasang', rekap.pasirPasang_m3, 'm³', 'pasir_pasang'),
-                _Baris('Pasir Beton', rekap.pasirBeton_kg, 'kg', 'pasir_beton'),
-                _Baris('Semen PC', rekap.semen_kg, 'kg', 'semen_pc'),
-                _Baris('Papan Bekisting', rekap.papanBekisting_m2, 'm²', 'papan_bekisting'),
-              ]),
-              _buildSubSeksi('3. Pekerjaan Struktur & Dinding', [
-                _Baris('Besi Tulangan Polos (Sloof + Kolom + Ring Balok)', rekap.besiPolos_kg, 'kg', 'besi_polos'),
-                _Baris('Bata Merah', rekap.bataMerah_buah, 'buah', 'bata_merah'),
-              ]),
-              _buildSubSeksi('4. Pekerjaan Lantai & Timbunan', [
-                _Baris('Tanah Timbun Bawah Lantai', rekap.tanahTimbun_m3, 'm³', 'tanah_timbun'),
-                _Baris('Pasir Urug Bawah Lantai', rekap.pasirUrug_m3, 'm³', 'pasir_urug'),
-                _Baris('Keramik Lantai 40×40 cm', rekap.keramik40x40_buah, 'buah', 'keramik_40x40'),
-              ]),
-              _buildSubSeksi('5. Pekerjaan Pintu, Jendela & Pengunci', [
-                _Baris('Balok Kayu Kelas I (Kusen)', rekap.balkKayuKelas1_m3, 'm³', 'balok_kayu_kelas1'),
-                _Baris('Balok Kayu Kelas II (Daun Pintu)', rekap.balkKayuKelas2_m3, 'm³', 'balok_kayu_kelas2'),
-                _Baris('Papan Kayu Kelas II (Daun Jendela)', rekap.papanKayuKelas2_m3, 'm³', 'papan_kayu_kelas2'),
-                _Baris('Kaca Polos 5mm', rekap.kaca5mm_m2, 'm²', 'kaca_5mm'),
-                _Baris('Kunci Pintu Silinder', rekap.kunciPintu_buah, 'buah', 'kunci_pintu'),
-                _Baris('Engsel Pintu', rekap.engselPintu_buah, 'buah', 'engsel_pintu'),
-                _Baris('Engsel Jendela', rekap.engselJendela_buah, 'buah', 'engsel_jendela'),
-              ]),
-              _buildSubSeksi('6. Pekerjaan Atap & Plafon', [
-                _Baris('Besi Hollow 4×4 cm (Rangka Plafon)', rekap.hollow4x4_batang, 'batang', 'hollow_4x4'),
-                _Baris('Besi Hollow 2×4 cm', rekap.hollow2x4_batang, 'batang', 'hollow_2x4'),
-                _Baris('Papan Gypsum 9mm', rekap.papanGypsum_lembar, 'lembar', 'papan_gypsum'),
-                _Baris('List Profil Kayu (List Plafon)', rekap.listProfilKayu_m, 'm', 'list_profil_kayu'),
-                _Baris('Profil Baja Ringan C-75 (Kuda-kuda)', rekap.profilC75_m, 'm', 'profil_c75'),
-                _Baris('Reng Baja Ringan', rekap.rengBaja_m, 'm', 'reng_baja'),
-                _Baris('Genteng Galvalum / Metal', rekap.gentengGalvalum_m2, 'm²', 'genteng_galvalum'),
-                _Baris('Nok / Bubungan Galvalum', rekap.nokGalvalum_m, 'm', 'nok_galvalum'),
-                _Baris('Papan Listplank', rekap.papanListplank_m3, 'm', 'papan_listplank'),
-                _Baris('Kayu Balok 5/7', rekap.kayuBalok57_m3, 'm³', 'kayu_balok_57'),
-              ]),
-              _buildSubSeksi('7. Pekerjaan Finishing Cat & Listrik', [
-                _Baris('Plamir Tembok', rekap.plamirTembok_kg, 'kg', 'plamir_tembok'),
-                _Baris('Cat Dasar Tembok', rekap.catDasarTembok_kg, 'kg', 'cat_dasar_tembok'),
-                _Baris('Cat Tembok (Warna)', rekap.catTembok_kg, 'kg', 'cat_tembok'),
-                _Baris('Cat Menie Kayu', rekap.catMenie_kg, 'kg', 'cat_menie'),
-                _Baris('Plamir Kayu', rekap.plamirKayu_kg, 'kg', 'plamir_kayu'),
-                _Baris('Cat Dasar Kayu', rekap.catDasarKayu_kg, 'kg', 'cat_dasar_kayu'),
-                _Baris('Cat Kayu / Gloss', rekap.catKayu_kg, 'kg', 'cat_kayu'),
-                _Baris('Lampu LED 18 Watt', rekap.lampuLed_buah, 'buah', 'lampu_led_18w'),
-                _Baris('Saklar Tunggal', rekap.saklarTunggal_buah, 'buah', 'saklar_tunggal'),
-                _Baris('Saklar Ganda', rekap.saklarGanda_buah, 'buah', 'saklar_ganda'),
-                _Baris('Stop Kontak', rekap.stopKontak_buah, 'buah', 'stop_kontak'),
-              ]),
-              _buildRowSubTotal(
-                  'Sub Total Biaya Material', rekap.totalBiayaMaterial),
-              const SizedBox(height: 28),
-            ],
-
-            if (hasilG != null) ...[
-              _buildHeaderSeksi('B. Biaya Upah Tenaga Kerja'),
-              const SizedBox(height: 16),
-              _buildTabelUpah(hasilG),
-              _buildRowSubTotal('Sub Total Biaya Upah', hasilG.totalBiayaUpah),
-              const SizedBox(height: 28),
-            ],
-
-            if (rekap != null && hasilG != null)
-              _buildGrandTotal(
-                  rekap.totalBiayaMaterial + hasilG.totalBiayaUpah),
-          ],
-        ],
-      ),
-    );
-  }
-
-  // info proyek
-  Widget _buildInfoProyek() {
-    final p = widget.project;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text('Detail Proyek',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              _buildInfoItem(Icons.home_work_outlined, 'Nama Proyek',
-                  p.projectName, const Color(0xFF4CAF50)),
-              const SizedBox(width: 16),
-              _buildInfoItem(Icons.person_outline, 'Nama Klien', p.clientName,
-                  const Color(0xFF2196F3)),
-              const SizedBox(width: 16),
-              _buildInfoItem(Icons.engineering_outlined, 'Nama Surveyor',
-                  p.surveyorName, const Color(0xFF9C27B0)),
-              const SizedBox(width: 16),
-              _buildInfoItem(Icons.calendar_today_outlined, 'Tanggal Survey',
-                  _formatTanggal.format(p.createdAt), const Color(0xFFFF9800)),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoItem(
-      IconData icon, String label, String nilai, Color warna) {
-    return Expanded(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: warna.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 20, color: warna),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
+          // Judul dokumen RAB
+          Center(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style: TextStyle(fontSize: 11, color: Colors.grey[500])),
-                const SizedBox(height: 2),
-                Text(nilai,
-                    style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
+                const Text(
+                  'RENCANA ANGGARAN BIAYA (RAB)',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'ESTIMASI CEPAT — ${widget.project.projectName.toUpperCase()}',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Klien: ${widget.project.clientName}',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                ),
               ],
             ),
           ),
+          const SizedBox(height: 24),
+
+          // Catatan snapshot
+          if (_snapshotHarga.isEmpty)
+            _buildWarningBanner(
+              'Snapshot harga belum tersedia. Selesaikan kalkulasi di Mobile App terlebih dahulu.',
+            ),
+
+          // A. Persiapan Tanah & Pondasi
+          _buildSeksiRAB(
+            kode: 'A',
+            judul: 'PEKERJAAN PERSIAPAN, TANAH & PONDASI',
+            items: _itemsMenuA(vol),
+            subTotal: subA,
+          ),
+
+          // B. Struktur & Dinding
+          _buildSeksiRAB(
+            kode: 'B',
+            judul: 'PEKERJAAN STRUKTUR & DINDING',
+            items: _itemsMenuB(vol),
+            subTotal: subB,
+          ),
+
+          // C. Lantai & Timbunan
+          _buildSeksiRAB(
+            kode: 'C',
+            judul: 'PEKERJAAN LANTAI & TIMBUNAN',
+            items: _itemsMenuC(vol),
+            subTotal: subC,
+          ),
+
+          // D. Pintu, Jendela & Pengunci
+          _buildSeksiRAB(
+            kode: 'D',
+            judul: 'PEKERJAAN PINTU, JENDELA & PENGUNCI',
+            items: _itemsMenuD(vol),
+            subTotal: subD,
+          ),
+
+          // E. Atap & Plafon
+          _buildSeksiRAB(
+            kode: 'E',
+            judul: 'PEKERJAAN ATAP & PLAFON',
+            items: _itemsMenuE(vol),
+            subTotal: subE,
+          ),
+
+          // F. Finishing Cat & Listrik
+          _buildSeksiRAB(
+            kode: 'F',
+            judul: 'PEKERJAAN FINISHING, CAT & INSTALASI LISTRIK',
+            items: _itemsMenuF(vol),
+            subTotal: subF,
+          ),
+
+          _buildRowSubTotal('SUB TOTAL BIAYA MATERIAL', totalMaterial),
+          const SizedBox(height: 24),
+
+          // G. Upah Tenaga Kerja
+          if (hasilG != null) ...[
+            _buildSeksiUpah(hasilG),
+            _buildRowSubTotal('SUB TOTAL BIAYA UPAH', totalUpah),
+            const SizedBox(height: 24),
+          ],
+
+          _buildGrandTotal(grandTotal),
+          const SizedBox(height: 16),
+          _buildCatatanKaki(),
         ],
       ),
     );
   }
 
-  // header
-  Widget _buildHeaderSeksi(String judul) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF3D5A4C),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(judul,
-          style: const TextStyle(
-              fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
-    );
+  // Item rows per menu
+
+  List<_BarisRAB> _itemsMenuA(_VolumePerhitungan v) => [
+    _BarisRAB(
+      'Pembersihan Lapangan',
+      v.volBersih,
+      'm²',
+      0,
+      override: 0,
+    ),
+    _BarisRAB(
+      'Pemasangan Bouwplank',
+      v.volBouwplank,
+      'm\'',
+      _hp('kayu_balok_57') * _k('mat_kayu_balok57') +
+          _hp('papan_bekisting') * _k('mat_papan_bekisting_bouwplank'),
+    ),
+    _BarisRAB(
+      'Galian Tanah Pondasi Menerus',
+      v.volGalianMenerus,
+      'm³',
+      0,
+      override: 0,
+    ),
+    _BarisRAB(
+      'Galian Tanah Pondasi Tapak',
+      v.volGalianTapak,
+      'm³',
+      0,
+      override: 0,
+    ),
+    _BarisRAB(
+      'Urugan Pasir Pondasi Menerus',
+      v.volPasirMenerus,
+      'm³',
+      _hp('pasir_urug') * _k('mat_pasir_urug'),
+    ),
+    _BarisRAB(
+      'Urugan Pasir Pondasi Tapak',
+      v.volPasirTapak,
+      'm³',
+      _hp('pasir_urug') * _k('mat_pasir_urug'),
+    ),
+    // Aanstamping: hanya biaya pasir urugan (batu_kali dihitung di baris Pasangan Batu Kali)
+    _BarisRAB(
+      'Aanstamping / Batu Kosong (Menerus)',
+      v.volAanstampMenerus,
+      'm³',
+      _hp('pasir_urug') * _k('mat_aanstamp_pasir_urug'),
+    ),
+    _BarisRAB(
+      'Aanstamping / Batu Kosong (Tapak)',
+      v.volAanstampTapak,
+      'm³',
+      _hp('pasir_urug') * _k('mat_aanstamp_pasir_urug'),
+    ),
+    // Pasangan Batu Kali: volume mencakup batu kali + aanstamping (sesuai engine Mobile)
+    // batuKali = (aanstampMenerus + aanstampTapak + volBatuKali) × k.matBatuKali
+    _BarisRAB(
+      'Pasangan Batu Kali 1:4 (termasuk Aanstamping)',
+      v.volAanstampMenerus + v.volAanstampTapak + v.volBatuKali,
+      'm³',
+      _hp('batu_kali') * _k('mat_batu_kali'),
+    ),
+    _BarisRAB(
+      'Pasangan Batu Kali — Semen PC',
+      v.volBatuKali,
+      'm³',
+      _hp('semen_pc') * _k('mat_semen_batu_kali') +
+          _hp('pasir_pasang') * _k('mat_pasir_pasang_batu_kali'),
+    ),
+    _BarisRAB(
+      'Beton Pondasi Tapak K-175',
+      v.volBetonTapak,
+      'm³',
+      _hp('kerikil') * _k('mat_kerikil_beton') +
+          _hp('pasir_beton') * _k('mat_pasir_beton') +
+          _hp('semen_pc') * _k('mat_semen_beton'),
+    ),
+    _BarisRAB(
+      'Urugan Kembali Galian Menerus',
+      v.volUrugMenerus,
+      'm³',
+      0,
+      override: 0,
+    ),
+    _BarisRAB(
+      'Urugan Kembali Galian Tapak',
+      v.volUrugTapak,
+      'm³',
+      0,
+      override: 0,
+    ),
+  ];
+
+  List<_BarisRAB> _itemsMenuB(_VolumePerhitungan v) => [
+    _BarisRAB(
+      'Sloof Beton Bertulang 15/20',
+      v.volSloof,
+      'm³',
+      _hp('besi_polos') * _k('mat_besi_sloof') +
+          _hp('kerikil') * _k('mat_kerikil_beton') +
+          _hp('pasir_beton') * _k('mat_pasir_beton') +
+          _hp('semen_pc') * _k('mat_semen_beton') +
+          _hp('papan_bekisting') * _k('mat_papan_bekisting_sloof'),
+    ),
+    _BarisRAB(
+      'Kolom Praktis 13/13',
+      v.volKolom,
+      'm³',
+      _hp('besi_polos') * _k('mat_besi_kolom') +
+          _hp('kerikil') * _k('mat_kerikil_beton') +
+          _hp('pasir_beton') * _k('mat_pasir_beton') +
+          _hp('semen_pc') * _k('mat_semen_beton') +
+          _hp('papan_bekisting') * _k('mat_papan_bekisting_kolom'),
+    ),
+    _BarisRAB(
+      'Ring Balok 15/15',
+      v.volRingBalok,
+      'm³',
+      _hp('besi_polos') * _k('mat_besi_ring_balok') +
+          _hp('kerikil') * _k('mat_kerikil_beton') +
+          _hp('pasir_beton') * _k('mat_pasir_beton') +
+          _hp('semen_pc') * _k('mat_semen_beton') +
+          _hp('papan_bekisting') * _k('mat_papan_bekisting_ring'),
+    ),
+    _BarisRAB(
+      'Pasangan Dinding Bata 1:4',
+      v.volDinding,
+      'm²',
+      _hp('bata_merah') * _k('mat_bata_merah') +
+          _hp('semen_pc') * _k('mat_semen_dinding') +
+          _hp('pasir_pasang') * _k('mat_pasir_pasang_dinding'),
+    ),
+    _BarisRAB(
+      'Plesteran Dinding 1:4',
+      v.volPlester,
+      'm²',
+      _hp('semen_pc') * _k('mat_semen_plester') +
+          _hp('pasir_pasang') * _k('mat_pasir_pasang_plester'),
+    ),
+    _BarisRAB(
+      'Acian Dinding',
+      v.volAcian,
+      'm²',
+      _hp('semen_pc') * _k('mat_semen_acian'),
+    ),
+  ];
+
+  List<_BarisRAB> _itemsMenuC(_VolumePerhitungan v) => [
+    _BarisRAB(
+      'Timbunan Tanah Bawah Lantai',
+      v.volTimbunan,
+      'm³',
+      _hp('tanah_timbun') * _k('mat_tanah_timbun'),
+    ),
+    _BarisRAB(
+      'Urugan Pasir Bawah Lantai',
+      v.volPasirLantai,
+      'm³',
+      _hp('pasir_urug') * _k('mat_pasir_urug'),
+    ),
+    _BarisRAB(
+      'Cor Lantai Beton Tumbuk',
+      v.volCorLantai,
+      'm³',
+      _hp('kerikil') * _k('mat_kerikil_lantai') +
+          _hp('pasir_beton') * _k('mat_pasir_beton_lantai') +
+          _hp('semen_pc') * _k('mat_semen_lantai'),
+    ),
+    _BarisRAB(
+      'Pasangan Keramik Lantai 40×40',
+      v.volKeramik,
+      'm²',
+      _hp('keramik_40x40') * _k('mat_keramik') +
+          _hp('semen_pc') * _k('mat_semen_keramik') +
+          _hp('pasir_pasang') * _k('mat_pasir_pasang_keramik'),
+    ),
+  ];
+
+  List<_BarisRAB> _itemsMenuD(_VolumePerhitungan v) => [
+    _BarisRAB(
+      'Kusen Pintu + Ventilasi (Kayu Kls I)',
+      v.volKusenPintu + v.volKusenVentilasi,
+      'm³',
+      _hp('balok_kayu_kelas1') * _k('mat_balk_kayu_kelas1'),
+    ),
+    _BarisRAB(
+      'Daun Pintu (Kayu Kls II)',
+      v.volDaunPintu,
+      'm²',
+      _hp('balok_kayu_kelas2') * _k('mat_balk_kayu_kelas2'),
+    ),
+    _BarisRAB(
+      'Kusen Jendela (Kayu Kls I)',
+      v.volKusenJendela,
+      'm³',
+      _hp('balok_kayu_kelas1') * _k('mat_balk_kayu_kelas1'),
+    ),
+    _BarisRAB(
+      'Daun Jendela (Kayu Kls II)',
+      v.volDaunJendela,
+      'm²',
+      _hp('papan_kayu_kelas2') * _k('mat_papan_kayu_kelas2'),
+    ),
+    _BarisRAB(
+      'Kaca Polos 5mm',
+      v.volKaca,
+      'm²',
+      _hp('kaca_5mm') * _k('mat_kaca_5mm'),
+    ),
+    _BarisRAB(
+      'Kunci Pintu Silinder',
+      v.jmlKunci.toDouble(),
+      'buah',
+      _hp('kunci_pintu'),
+    ),
+    _BarisRAB(
+      'Engsel Pintu',
+      v.jmlEngselPintu.toDouble(),
+      'buah',
+      _hp('engsel_pintu'),
+    ),
+    _BarisRAB(
+      'Engsel Jendela',
+      v.jmlEngselJendela.toDouble(),
+      'buah',
+      _hp('engsel_jendela'),
+    ),
+  ];
+
+  List<_BarisRAB> _itemsMenuE(_VolumePerhitungan v) => [
+    _BarisRAB(
+      'Rangka Plafon Hollow 4×4',
+      v.volPlafon,
+      'm²',
+      _hp('hollow_4x4') * _k('mat_hollow_4x4'),
+    ),
+    _BarisRAB(
+      'Rangka Plafon Hollow 2×4',
+      v.volPlafon,
+      'm²',
+      _hp('hollow_2x4') * _k('mat_hollow_2x4'),
+    ),
+    _BarisRAB(
+      'Papan Gypsum 9mm',
+      v.volPlafon,
+      'm²',
+      _hp('papan_gypsum') * _k('mat_papan_gypsum'),
+    ),
+    _BarisRAB(
+      'List Profil Kayu Plafon',
+      v.volListPlafon,
+      'm\'',
+      _hp('list_profil_kayu') * _k('mat_list_profil_kayu'),
+    ),
+    _BarisRAB(
+      'Rangka Atap Baja Ringan C-75',
+      v.volRangkaAtap,
+      'm²',
+      _hp('profil_c75') * _k('mat_profil_c75') +
+          _hp('reng_baja') * _k('mat_reng_baja'),
+    ),
+    _BarisRAB(
+      'Penutup Atap Genteng Galvalum',
+      v.volGenteng,
+      'm²',
+      _hp('genteng_galvalum') * _k('mat_genteng_galvalum'),
+    ),
+    _BarisRAB(
+      'Nok / Bubungan Galvalum',
+      v.volNok,
+      'm\'',
+      _hp('nok_galvalum') * _k('mat_nok_galvalum'),
+    ),
+    _BarisRAB(
+      'Papan Listplank',
+      v.volListplank,
+      'm\'',
+      _hp('papan_listplank') * _k('mat_papan_listplank'),
+    ),
+  ];
+
+  List<_BarisRAB> _itemsMenuF(_VolumePerhitungan v) => [
+    _BarisRAB(
+      'Plamir Tembok',
+      v.volCatTembokPlafon,
+      'm²',
+      _hp('plamir_tembok') * _k('mat_plamir_tembok'),
+    ),
+    _BarisRAB(
+      'Cat Dasar Tembok',
+      v.volCatTembokPlafon,
+      'm²',
+      _hp('cat_dasar_tembok') * _k('mat_cat_dasar_tembok'),
+    ),
+    _BarisRAB(
+      'Cat Tembok & Plafon',
+      v.volCatTembokPlafon,
+      'm²',
+      _hp('cat_tembok') * _k('mat_cat_tembok'),
+    ),
+    _BarisRAB(
+      'Cat Menie Kayu',
+      v.volCatKayu,
+      'm²',
+      _hp('cat_menie') * _k('mat_cat_menie'),
+    ),
+    _BarisRAB(
+      'Plamir Kayu',
+      v.volCatKayu,
+      'm²',
+      _hp('plamir_kayu') * _k('mat_plamir_kayu'),
+    ),
+    _BarisRAB(
+      'Cat Dasar Kayu',
+      v.volCatKayu,
+      'm²',
+      _hp('cat_dasar_kayu') * _k('mat_cat_dasar_kayu'),
+    ),
+    _BarisRAB(
+      'Cat Kayu / Gloss',
+      v.volCatKayu,
+      'm²',
+      _hp('cat_kayu') * _k('mat_cat_kayu'),
+    ),
+    _BarisRAB(
+      'Lampu LED 18 Watt',
+      v.jmlLampu.toDouble(),
+      'buah',
+      _hp('lampu_led_18w'),
+    ),
+    _BarisRAB(
+      'Saklar Tunggal',
+      v.jmlSaklar1.toDouble(),
+      'buah',
+      _hp('saklar_tunggal'),
+    ),
+    _BarisRAB(
+      'Saklar Ganda',
+      v.jmlSaklar2.toDouble(),
+      'buah',
+      _hp('saklar_ganda'),
+    ),
+    _BarisRAB(
+      'Stop Kontak',
+      v.jmlStopKontak.toDouble(),
+      'buah',
+      _hp('stop_kontak'),
+    ),
+  ];
+
+  // Sub-total per bagian
+  double _hitungSubTotalA(_VolumePerhitungan v) {
+    double t = 0;
+    for (final b in _itemsMenuA(v)) {
+      t += b.volume * b.hargaSatuan;
+    }
+    return t;
   }
 
-  // sub+tabel
-  Widget _buildSubSeksi(String judul, List<_Baris> items) {
-    // Hanya tampilkan baris dengan qty > 0
-    final itemAda = items.where((i) => i.qty > 0).toList();
-    if (itemAda.isEmpty) return const SizedBox.shrink();
-
-    double subTotal = 0;
-    for (final item in itemAda) {
-      subTotal += item.qty * (_hargaMap[item.idMaterial]?.hargaSatuan ?? 0);
+  double _hitungSubTotalB(_VolumePerhitungan v) {
+    double t = 0;
+    for (final b in _itemsMenuB(v)) {
+      t += b.volume * b.hargaSatuan;
     }
+    return t;
+  }
+
+  double _hitungSubTotalC(_VolumePerhitungan v) {
+    double t = 0;
+    for (final b in _itemsMenuC(v)) {
+      t += b.volume * b.hargaSatuan;
+    }
+    return t;
+  }
+
+  double _hitungSubTotalD(_VolumePerhitungan v) {
+    double t = 0;
+    for (final b in _itemsMenuD(v)) {
+      t += b.volume * b.hargaSatuan;
+    }
+    return t;
+  }
+
+  double _hitungSubTotalE(_VolumePerhitungan v) {
+    double t = 0;
+    for (final b in _itemsMenuE(v)) {
+      t += b.volume * b.hargaSatuan;
+    }
+    return t;
+  }
+
+  double _hitungSubTotalF(_VolumePerhitungan v) {
+    double t = 0;
+    for (final b in _itemsMenuF(v)) {
+      t += b.volume * b.hargaSatuan;
+    }
+    return t;
+  }
+
+  //UI Widgets 
+  Widget _buildSeksiRAB({
+    required String kode,
+    required String judul,
+    required List<_BarisRAB> items,
+    required double subTotal,
+  }) {
+    final itemAda = items.where((i) => i.volume > 0).toList();
+    if (itemAda.isEmpty) return const SizedBox.shrink();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -332,51 +713,72 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Sub-header judul
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 14, 20, 10),
-            child: Text(judul,
-                style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.bold)),
+          // Header
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            decoration: const BoxDecoration(
+              color: Color(0xFF3D5A4C),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+            ),
+            child: Text(
+              '$kode.  $judul',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 0.3,
+              ),
+            ),
           ),
 
-          // Header kolom
+          // Header kolom tabel
           _buildHeaderKolom(),
 
           // Baris data
           ...itemAda.asMap().entries.map((e) {
             final item = e.value;
-            final hargaSatuan =
-                _hargaMap[item.idMaterial]?.hargaSatuan ?? 0;
-            return _buildBarisData(e.key + 1, item.nama, item.qty,
-                item.satuan, hargaSatuan, item.qty * hargaSatuan);
+            return _buildBarisData(
+              e.key + 1,
+              item.nama,
+              item.volume,
+              item.satuan,
+              item.hargaSatuan,
+              item.volume * item.hargaSatuan,
+            );
           }),
 
-          // Sub total seksi
+          // Sub-total
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             decoration: BoxDecoration(
               color: Colors.grey[50],
-              borderRadius:
-                  const BorderRadius.vertical(bottom: Radius.circular(8)),
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(8),
+              ),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Text('Sub Total $judul:',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                Text(
+                  'Sub Total $kode:',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
                 const SizedBox(width: 16),
-                Text(_formatRp.format(subTotal),
-                    style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87)),
+                Text(
+                  _formatRp.format(subTotal),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
               ],
             ),
           ),
@@ -392,141 +794,216 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       child: Row(
         children: [
           _thCell('No', flex: 1),
-          _thCell('Uraian Pekerjaan / Material', flex: 5),
+          _thCell('Uraian Pekerjaan', flex: 5),
           _thCell('Volume', flex: 2, align: TextAlign.right),
-          _thCell('Satuan', flex: 2, align: TextAlign.center),
-          _thCell('Harga Satuan', flex: 3, align: TextAlign.right),
-          _thCell('Jumlah Harga', flex: 3, align: TextAlign.right),
+          _thCell('Sat.', flex: 2, align: TextAlign.center),
+          _thCell('Harga Satuan (Rp)', flex: 3, align: TextAlign.right),
+          _thCell('Jumlah Harga (Rp)', flex: 3, align: TextAlign.right),
         ],
       ),
     );
   }
 
-  Widget _thCell(String label,
-      {int flex = 1, TextAlign align = TextAlign.left}) {
-    return Expanded(
-      flex: flex,
-      child: Text(label,
-          textAlign: align,
-          style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87)),
-    );
-  }
-
-  Widget _buildBarisData(int no, String nama, double qty, String satuan,
-      double hargaSatuan, double jumlahHarga) {
+  Widget _buildBarisData(
+    int no,
+    String nama,
+    double qty,
+    String satuan,
+    double hargaSatuan,
+    double jumlahHarga,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: Colors.grey[100]!))),
+        border: Border(bottom: BorderSide(color: Colors.grey[100]!)),
+      ),
       child: Row(
         children: [
           Expanded(
-              flex: 1,
-              child: Text(no.toString(),
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500]))),
+            flex: 1,
+            child: Text(
+              no.toString(),
+              style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+            ),
+          ),
           Expanded(
-              flex: 5,
-              child: Text(nama,
-                  style:
-                      const TextStyle(fontSize: 12, color: Colors.black87))),
+            flex: 5,
+            child: Text(
+              nama,
+              style: const TextStyle(fontSize: 12, color: Colors.black87),
+            ),
+          ),
           Expanded(
-              flex: 2,
-              child: Text(_formatQty(qty),
-                  textAlign: TextAlign.right,
-                  style:
-                      const TextStyle(fontSize: 12, color: Colors.black87))),
+            flex: 2,
+            child: Text(
+              _formatAngka.format(qty),
+              textAlign: TextAlign.right,
+              style: const TextStyle(fontSize: 12, color: Colors.black87),
+            ),
+          ),
           Expanded(
-              flex: 2,
-              child: Text(satuan,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]))),
+            flex: 2,
+            child: Text(
+              satuan,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+          ),
           Expanded(
-              flex: 3,
-              child: Text(_formatRp.format(hargaSatuan),
-                  textAlign: TextAlign.right,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[700]))),
+            flex: 3,
+            child: Text(
+              hargaSatuan > 0 ? _formatRp.format(hargaSatuan) : '-',
+              textAlign: TextAlign.right,
+              style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+            ),
+          ),
           Expanded(
-              flex: 3,
-              child: Text(_formatRp.format(jumlahHarga),
-                  textAlign: TextAlign.right,
-                  style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87))),
+            flex: 3,
+            child: Text(
+              jumlahHarga > 0 ? _formatRp.format(jumlahHarga) : '-',
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  // tabel upah
-  Widget _buildTabelUpah(HasilMenuG g) {
-    final upahPekerja =
-        g.totalOhPekerja > 0 ? g.biayaUpahPekerja / g.totalOhPekerja : 0.0;
-    final upahTukang =
-        g.totalOhTukang > 0 ? g.biayaUpahTukang / g.totalOhTukang : 0.0;
-    final upahMandor =
-        g.totalOhMandor > 0 ? g.biayaUpahMandor / g.totalOhMandor : 0.0;
+  Widget _buildSeksiUpah(HasilMenuG g) {
+    final upahPekerja = g.totalOhPekerja > 0
+        ? g.biayaUpahPekerja / g.totalOhPekerja
+        : 0.0;
+    final upahTukang = g.totalOhTukang > 0
+        ? g.biayaUpahTukang / g.totalOhTukang
+        : 0.0;
+    final upahMandor = g.totalOhMandor > 0
+        ? g.biayaUpahMandor / g.totalOhMandor
+        : 0.0;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 0),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6)
+          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6),
         ],
       ),
       child: Column(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: const BoxDecoration(
-              color: Color(0xFFE3EAE6),
+              color: Color(0xFF3D5A4C),
               borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
             ),
+            child: const Text(
+              'G.  BIAYA UPAH TENAGA KERJA',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+            color: const Color(0xFFE3EAE6),
             child: Row(
               children: [
                 _thCell('No', flex: 1),
-                _thCell('Jenis Tenaga Kerja', flex: 4),
+                _thCell('Jenis Tenaga Kerja', flex: 5),
                 _thCell('Total OH', flex: 2, align: TextAlign.right),
-                _thCell('Satuan', flex: 2, align: TextAlign.center),
-                _thCell('Tarif / OH', flex: 3, align: TextAlign.right),
-                _thCell('Jumlah Biaya', flex: 3, align: TextAlign.right),
+                _thCell('Sat.', flex: 2, align: TextAlign.center),
+                _thCell('Tarif / OH (Rp)', flex: 3, align: TextAlign.right),
+                _thCell('Jumlah Biaya (Rp)', flex: 3, align: TextAlign.right),
               ],
             ),
           ),
-          _buildBarisData(1, 'Pekerja', g.totalOhPekerja, 'OH', upahPekerja,
-              g.biayaUpahPekerja),
-          _buildBarisData(2, 'Tukang', g.totalOhTukang, 'OH', upahTukang,
-              g.biayaUpahTukang),
-          _buildBarisData(3, 'Mandor', g.totalOhMandor, 'OH', upahMandor,
-              g.biayaUpahMandor),
+          _buildBarisData(
+            1,
+            'Pekerja',
+            g.totalOhPekerja,
+            'OH',
+            upahPekerja,
+            g.biayaUpahPekerja,
+          ),
+          _buildBarisData(
+            2,
+            'Tukang',
+            g.totalOhTukang,
+            'OH',
+            upahTukang,
+            g.biayaUpahTukang,
+          ),
+          _buildBarisData(
+            3,
+            'Mandor',
+            g.totalOhMandor,
+            'OH',
+            upahMandor,
+            g.biayaUpahMandor,
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: const BorderRadius.vertical(
+                bottom: Radius.circular(8),
+              ),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Text(
+                  'Sub Total G:',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  _formatRp.format(g.totalBiayaUpah),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
-  // footer
   Widget _buildRowSubTotal(String label, double nilai) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      margin: const EdgeInsets.only(top: 4),
+      margin: const EdgeInsets.only(top: 4, bottom: 4),
       decoration: BoxDecoration(
-          color: Colors.grey[100], borderRadius: BorderRadius.circular(6)),
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(6),
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          Text(label,
-              style: TextStyle(fontSize: 13, color: Colors.grey[700])),
+          Text(label, style: TextStyle(fontSize: 13, color: Colors.grey[700])),
           const SizedBox(width: 24),
-          Text(_formatRp.format(nilai),
-              style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87)),
+          Text(
+            _formatRp.format(nilai),
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
         ],
       ),
     );
@@ -544,57 +1021,477 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text('GRAND TOTAL ESTIMASI BIAYA',
-              style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 0.5)),
-          Text(_formatRp.format(grandTotal),
-              style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white)),
+          const Text(
+            'GRAND TOTAL ESTIMASI BIAYA',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 0.5,
+            ),
+          ),
+          Text(
+            _formatRp.format(grandTotal),
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  // empty state
+  Widget _buildCatatanKaki() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.amber[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.amber.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Catatan:',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.amber[900],
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '• Dokumen ini merupakan Estimasi Cepat (Quick Count), bukan RAB detail.\n'
+            '• Harga satuan menggunakan data yang terkunci pada tanggal snapshot proyek.\n'
+            '• Koefisien material mengacu pada standar SNI yang berlaku.\n'
+            '• Untuk RAB resmi, diperlukan survey lapangan dan analisa harga satuan setempat.',
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.amber[800],
+              height: 1.6,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWarningBanner(String pesan) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.orange[50],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.orange.shade300),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.warning_amber_rounded,
+            color: Colors.orange[700],
+            size: 18,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              pesan,
+              style: TextStyle(fontSize: 12, color: Colors.orange[800]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoProyek() {
+    final p = widget.project;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Informasi Proyek',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _buildInfoItem(
+                Icons.home_work_outlined,
+                'Nama Proyek',
+                p.projectName,
+                const Color(0xFF4CAF50),
+              ),
+              const SizedBox(width: 16),
+              _buildInfoItem(
+                Icons.person_outline,
+                'Nama Klien',
+                p.clientName,
+                const Color(0xFF2196F3),
+              ),
+              const SizedBox(width: 16),
+              _buildInfoItem(
+                Icons.engineering_outlined,
+                'Surveyor',
+                p.surveyorName,
+                const Color(0xFF9C27B0),
+              ),
+              const SizedBox(width: 16),
+              _buildInfoItem(
+                Icons.calendar_today_outlined,
+                'Tanggal Survey',
+                _formatTanggal.format(p.createdAt),
+                const Color(0xFFFF9800),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoItem(
+    IconData icon,
+    String label,
+    String nilai,
+    Color warna,
+  ) {
+    return Expanded(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: warna.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 20, color: warna),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  nilai,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildBelumAda() {
     return Container(
       width: double.infinity,
+      margin: const EdgeInsets.all(32),
       padding: const EdgeInsets.all(48),
       decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(12)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Column(
         children: [
           Icon(Icons.calculate_outlined, size: 60, color: Colors.grey[300]),
           const SizedBox(height: 16),
-          const Text('Kalkulasi belum tersedia',
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black54)),
+          const Text(
+            'Kalkulasi belum tersedia',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black54,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text('Surveyor belum menyelesaikan kalkulasi untuk proyek ini.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Colors.grey[500])),
+          Text(
+            'Surveyor belum menyelesaikan kalkulasi untuk proyek ini.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+          ),
         ],
       ),
     );
   }
 
-  String _formatQty(double qty) =>
-      qty == qty.toInt() ? qty.toInt().toString() : qty.toStringAsFixed(2);
+  Widget _thCell(
+    String label, {
+    int flex = 1,
+    TextAlign align = TextAlign.left,
+  }) {
+    return Expanded(
+      flex: flex,
+      child: Text(
+        label,
+        textAlign: align,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
 }
 
-// tabel lokal
-class _Baris {
-  final String nama;
-  final double qty;
-  final String satuan;
-  final String idMaterial;
+// kalkulasi volume identik dengan LayananPerhitungan
 
-  const _Baris(this.nama, this.qty, this.satuan, this.idMaterial);
+class _VolumePerhitungan {
+  // Menu A
+  final double volBersih;
+  final double volBouwplank;
+  final double volGalianMenerus;
+  final double volPasirMenerus;
+  final double volAanstampMenerus;
+  final double volBatuKali;
+  final double volGalianTapak;
+  final double volPasirTapak;
+  final double volAanstampTapak;
+  final double volBetonTapak;
+  final double volUrugMenerus;
+  final double volUrugTapak;
+
+  // Menu B
+  final double volSloof;
+  final double volKolom;
+  final double volRingBalok;
+  final double volDinding;
+  final double volPlester;
+  final double volAcian;
+
+  // Menu C
+  final double luasLantai;
+  final double volTimbunan;
+  final double volPasirLantai;
+  final double volCorLantai;
+  final double volKeramik;
+
+  // Menu D
+  final double volKusenPintu;
+  final double volDaunPintu;
+  final double volKusenVentilasi;
+  final int jmlKunci;
+  final int jmlEngselPintu;
+  final double volKusenJendela;
+  final double volDaunJendela;
+  final double volKaca;
+  final int jmlEngselJendela;
+
+  // Menu E
+  final double volPlafon;
+  final double volListPlafon;
+  final double volRangkaAtap;
+  final double volGenteng;
+  final double volListplank;
+  final double volNok;
+
+  // Menu F (derived)
+  final double volCatTembok;
+  final double volCatPlafon;
+  final double volCatKayu;
+  final double volCatTembokPlafon;
+  final int jmlLampu;
+  final int jmlSaklar1;
+  final int jmlSaklar2;
+  final int jmlStopKontak;
+
+  const _VolumePerhitungan({
+    required this.volBersih,
+    required this.volBouwplank,
+    required this.volGalianMenerus,
+    required this.volPasirMenerus,
+    required this.volAanstampMenerus,
+    required this.volBatuKali,
+    required this.volGalianTapak,
+    required this.volPasirTapak,
+    required this.volAanstampTapak,
+    required this.volBetonTapak,
+    required this.volUrugMenerus,
+    required this.volUrugTapak,
+    required this.volSloof,
+    required this.volKolom,
+    required this.volRingBalok,
+    required this.volDinding,
+    required this.volPlester,
+    required this.volAcian,
+    required this.luasLantai,
+    required this.volTimbunan,
+    required this.volPasirLantai,
+    required this.volCorLantai,
+    required this.volKeramik,
+    required this.volKusenPintu,
+    required this.volDaunPintu,
+    required this.volKusenVentilasi,
+    required this.jmlKunci,
+    required this.jmlEngselPintu,
+    required this.volKusenJendela,
+    required this.volDaunJendela,
+    required this.volKaca,
+    required this.jmlEngselJendela,
+    required this.volPlafon,
+    required this.volListPlafon,
+    required this.volRangkaAtap,
+    required this.volGenteng,
+    required this.volListplank,
+    required this.volNok,
+    required this.volCatTembok,
+    required this.volCatPlafon,
+    required this.volCatKayu,
+    required this.volCatTembokPlafon,
+    required this.jmlLampu,
+    required this.jmlSaklar1,
+    required this.jmlSaklar2,
+    required this.jmlStopKontak,
+  });
+
+  /// Rumus identik dengan LayananPerhitungan di Mobile
+  factory _VolumePerhitungan.dariInput(InputSurveyor i) {
+    // Menu A
+    final volBersih = i.pTanah * i.lTanah;
+    final volBouwplank = (i.pTanah + i.lTanah) * 2;
+    final volGalianMenerus = i.pPondasi * 0.80 * 0.85;
+    final volPasirMenerus = i.pPondasi * 1.00 * 0.05;
+    final volAanstampMenerus = i.pPondasi * 1.00 * 0.10;
+    final volBatuKali = i.pPondasi * 0.48;
+    final volGalianTapak = i.jmlTitikTapak * 1.5;
+    final volPasirTapak = i.jmlTitikTapak * 0.072;
+    final volAanstampTapak = i.jmlTitikTapak * 0.144;
+    final volBetonTapak = i.jmlTitikTapak * 0.3335;
+    final volUrugMenerus = volGalianMenerus * 0.25;
+    final volUrugTapak = volGalianTapak * 0.75;
+
+    // Menu B
+    final volSloof = i.pDinding * 0.15 * 0.20;
+    final volKolom = i.jmlKolom * 0.13 * 0.13 * 3.60;
+    final volRingBalok = i.pDinding * 0.15 * 0.15;
+    final volDinding = (i.pDinding * 3.60) * 0.825;
+    final volPlester = volDinding * 2;
+    final volAcian = volDinding * 2;
+
+    // Menu C
+    final luasLantai = i.pBangunan * i.lBangunan;
+    final volTimbunan = luasLantai * 0.40;
+    final volPasirLantai = luasLantai * 0.05;
+    final volCorLantai = luasLantai * 0.05;
+    final volKeramik = luasLantai;
+
+    // Menu D
+    final volKusenPintu = i.jmlPintu * (5.36 * 0.13 * 0.06);
+    final volDaunPintu = i.jmlPintu * (2.10 * 0.80);
+    final volKusenVentilasi = i.jmlPintu * (3.08 * 0.13 * 0.06);
+    final jmlKunci = i.jmlPintu * 1;
+    final jmlEngselPintu = i.jmlPintu * 3;
+    final volKusenJendela = i.jmlJendela * (5.40 * 0.13 * 0.06);
+    final volDaunJendela = i.jmlJendela * (0.80 * 0.60);
+    final volKaca = i.jmlJendela * (0.68 * 0.46);
+    final jmlEngselJendela = i.jmlJendela * 2;
+
+    // Menu E
+    final volPlafon = i.pBangunan * i.lBangunan;
+    final volListPlafon = 2 * (i.pBangunan + i.lBangunan);
+    final volRangkaAtap = ((i.pBangunan + 2) * (i.lBangunan + 2)) / 0.866;
+    final volGenteng = volRangkaAtap;
+    final volListplank = 2 * ((i.pBangunan + 2) + (i.lBangunan + 2));
+    final volNok = i.pBangunan + 2;
+
+    // Menu F
+    final volCatTembok = volDinding;
+    final volCatPlafon = volPlafon;
+    final volCatKayu = volDaunPintu + volDaunJendela;
+    final volCatTembokPlafon = volCatTembok + volCatPlafon;
+
+    return _VolumePerhitungan(
+      volBersih: volBersih,
+      volBouwplank: volBouwplank,
+      volGalianMenerus: volGalianMenerus,
+      volPasirMenerus: volPasirMenerus,
+      volAanstampMenerus: volAanstampMenerus,
+      volBatuKali: volBatuKali,
+      volGalianTapak: volGalianTapak,
+      volPasirTapak: volPasirTapak,
+      volAanstampTapak: volAanstampTapak,
+      volBetonTapak: volBetonTapak,
+      volUrugMenerus: volUrugMenerus,
+      volUrugTapak: volUrugTapak,
+      volSloof: volSloof,
+      volKolom: volKolom,
+      volRingBalok: volRingBalok,
+      volDinding: volDinding,
+      volPlester: volPlester,
+      volAcian: volAcian,
+      luasLantai: luasLantai,
+      volTimbunan: volTimbunan,
+      volPasirLantai: volPasirLantai,
+      volCorLantai: volCorLantai,
+      volKeramik: volKeramik,
+      volKusenPintu: volKusenPintu,
+      volDaunPintu: volDaunPintu,
+      volKusenVentilasi: volKusenVentilasi,
+      jmlKunci: jmlKunci,
+      jmlEngselPintu: jmlEngselPintu,
+      volKusenJendela: volKusenJendela,
+      volDaunJendela: volDaunJendela,
+      volKaca: volKaca,
+      jmlEngselJendela: jmlEngselJendela,
+      volPlafon: volPlafon,
+      volListPlafon: volListPlafon,
+      volRangkaAtap: volRangkaAtap,
+      volGenteng: volGenteng,
+      volListplank: volListplank,
+      volNok: volNok,
+      volCatTembok: volCatTembok,
+      volCatPlafon: volCatPlafon,
+      volCatKayu: volCatKayu,
+      volCatTembokPlafon: volCatTembokPlafon,
+      jmlLampu: i.jmlLampu,
+      jmlSaklar1: i.jmlSaklar1,
+      jmlSaklar2: i.jmlSaklar2,
+      jmlStopKontak: i.jmlStopKontak,
+    );
+  }
+}
+
+// Baris RAB
+class _BarisRAB {
+  final String nama;
+  final double volume;
+  final String satuan;
+  final double hargaSatuan;
+
+  const _BarisRAB(
+    this.nama,
+    this.volume,
+    this.satuan,
+    double hargaSatuan, {
+    double? override,
+  }) : hargaSatuan = override ?? hargaSatuan;
 }

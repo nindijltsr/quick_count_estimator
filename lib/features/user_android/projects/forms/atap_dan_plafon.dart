@@ -170,7 +170,7 @@ class _AtapDanPlafonPageState extends State<AtapDanPlafonPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Info box — sama dengan Menu C, auto-fill
+              // info box — sama dengan Menu C, auto-fill
               Container(
                 padding: const EdgeInsets.all(12),
                 margin: const EdgeInsets.only(bottom: 20),
@@ -211,7 +211,7 @@ class _AtapDanPlafonPageState extends State<AtapDanPlafonPage> {
 
               const SizedBox(height: 10),
 
-              // Tombol Simpan
+              // tombol simpan
               Consumer<EstimasiProvider>(
                 builder: (_, provider, __) {
                   return SizedBox(
@@ -242,7 +242,7 @@ class _AtapDanPlafonPageState extends State<AtapDanPlafonPage> {
               ),
               const SizedBox(height: 12),
 
-              // Tombol Lanjut
+              // tombol lanjut
               SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -273,7 +273,7 @@ class _AtapDanPlafonPageState extends State<AtapDanPlafonPage> {
               ),
               const SizedBox(height: 12),
 
-              // Tombol Menu Estimasi & Reset
+              // tombol menu estimasi & reset
               Row(
                 children: [
                   Expanded(

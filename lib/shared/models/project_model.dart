@@ -13,10 +13,16 @@ class ProjectModel {
   final DateTime updatedAt;
   final String statusPerhitungan;
 
-  // Nullable fields untuk hasil estimasi / output
+  // Output Estimasi
   final int? workerCount;
   final int? estimatedDuration;
   final double? totalCost;
+
+  // Snapshot harga & koefisien saat proyek disimpan
+  final Map<String, double> snapshotHargaMaterial;
+  final Map<String, double> snapshotHargaUpah;
+  final Map<String, double> snapshotKoefisien;
+  final DateTime? tanggalSnapshotDiambil;
 
   ProjectModel({
     required this.projectId,
@@ -33,9 +39,21 @@ class ProjectModel {
     this.workerCount,
     this.estimatedDuration,
     this.totalCost,
+    this.snapshotHargaMaterial = const {},
+    this.snapshotHargaUpah = const {},
+    this.snapshotKoefisien = const {},
+    this.tanggalSnapshotDiambil,
   });
 
   factory ProjectModel.fromMap(Map<String, dynamic> data, String documentId) {
+    // Helper type-safe untuk Map<String, double>
+    Map<String, double> parseDoubleMap(dynamic raw) {
+      if (raw == null || raw is! Map) return {};
+      return raw.map(
+        (k, v) => MapEntry(k.toString(), (v as num?)?.toDouble() ?? 0.0),
+      );
+    }
+
     return ProjectModel(
       projectId: documentId,
       userId: data['user_id'] ?? '',
@@ -51,6 +69,11 @@ class ProjectModel {
       workerCount: data['worker_count'],
       estimatedDuration: data['estimated_duration'],
       totalCost: (data['total_cost'] as num?)?.toDouble(),
+      snapshotHargaMaterial: parseDoubleMap(data['snapshot_harga_material']),
+      snapshotHargaUpah: parseDoubleMap(data['snapshot_harga_upah']),
+      snapshotKoefisien: parseDoubleMap(data['snapshot_koefisien']),
+      tanggalSnapshotDiambil: (data['tanggal_snapshot_diambil'] as Timestamp?)
+          ?.toDate(),
     );
   }
 
@@ -69,6 +92,12 @@ class ProjectModel {
       'worker_count': workerCount,
       'estimated_duration': estimatedDuration,
       'total_cost': totalCost,
+      'snapshot_harga_material': snapshotHargaMaterial,
+      'snapshot_harga_upah': snapshotHargaUpah,
+      'snapshot_koefisien': snapshotKoefisien,
+      'tanggal_snapshot_diambil': tanggalSnapshotDiambil != null
+          ? Timestamp.fromDate(tanggalSnapshotDiambil!)
+          : null,
     };
   }
 }

@@ -91,7 +91,7 @@ class _ProjectPageState extends State<ProjectPage> {
             ),
             const SizedBox(height: 20),
 
-            // Tabel dinamis
+            // Tabel
             Expanded(
               child: StreamBuilder<List<ProjectModel>>(
                 stream: _projectService.getAllProjects(),

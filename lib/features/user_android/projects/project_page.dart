@@ -4,6 +4,10 @@ import '../../../shared/models/project_model.dart';
 import '../../../shared/services/project_service.dart';
 import 'project_estimation_page.dart';
 
+import 'package:provider/provider.dart';
+import '../../../shared/services/koefisien_provider.dart';
+import '../../../shared/services/estimasi_provider.dart';
+
 class ProjectPage extends StatefulWidget {
   const ProjectPage({super.key});
 
@@ -78,8 +82,13 @@ class _ProjectPageState extends State<ProjectPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      project == null ? "Tambah Proyek Baru" : "Edit Data Proyek",
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      project == null
+                          ? "Tambah Proyek Baru"
+                          : "Edit Data Proyek",
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     IconButton(
                       icon: const Icon(Icons.close),
@@ -89,8 +98,16 @@ class _ProjectPageState extends State<ProjectPage> {
                 ),
                 const SizedBox(height: 20),
 
-                _buildTextField("Nama Proyek", "Masukkan nama proyek ...", _nameController),
-                _buildTextField("Nama Klien / Pemilik", "Masukkan nama klien ...", _clientController),
+                _buildTextField(
+                  "Nama Proyek",
+                  "Masukkan nama proyek ...",
+                  _nameController,
+                ),
+                _buildTextField(
+                  "Nama Klien / Pemilik",
+                  "Masukkan nama klien ...",
+                  _clientController,
+                ),
                 _buildTextField(
                   "Alamat Lokasi",
                   "Alamat lengkap lokasi proyek",
@@ -112,7 +129,9 @@ class _ProjectPageState extends State<ProjectPage> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppStyles.primaryGreen,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
                     ),
                     onPressed: () async {
                       if (_nameController.text.isEmpty) return;
@@ -129,6 +148,8 @@ class _ProjectPageState extends State<ProjectPage> {
                         await _projectService.updateProject(
                           projectId: project.projectId,
                           projectName: _nameController.text,
+                          // Nama lama dari ProjectModel — untuk detail log edit
+                          projectNameLama: project.projectName,
                           clientName: _clientController.text,
                           address: _addressController.text,
                           phoneNumber: _phoneController.text,
@@ -150,12 +171,15 @@ class _ProjectPageState extends State<ProjectPage> {
     );
   }
 
-  void _confirmDelete(String projectId) {
+  // Terima ProjectModel lengkap agar nama proyek bisa dicatat di log
+  void _confirmDelete(ProjectModel project) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text("Hapus Proyek?"),
-        content: const Text("Data yang dihapus tidak dapat dikembalikan."),
+        content: Text(
+          '"${project.projectName}" akan dihapus permanen dan tidak dapat dikembalikan.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -164,7 +188,10 @@ class _ProjectPageState extends State<ProjectPage> {
           TextButton(
             onPressed: () async {
               Navigator.pop(ctx);
-              await _projectService.deleteProject(projectId);
+              await _projectService.deleteProject(
+                projectId: project.projectId,
+                projectName: project.projectName,
+              );
             },
             child: const Text("Hapus", style: TextStyle(color: Colors.red)),
           ),
@@ -188,19 +215,24 @@ class _ProjectPageState extends State<ProjectPage> {
       ),
       body: Column(
         children: [
-          // Search bar 
+          // Search bar
           Container(
             padding: const EdgeInsets.all(16),
             color: Colors.white,
             child: TextField(
               controller: _searchController,
-              onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
+              onChanged: (value) =>
+                  setState(() => _searchQuery = value.toLowerCase()),
               decoration: InputDecoration(
                 hintText: "Cari proyek atau klien ...",
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
                 suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18, color: Colors.grey),
+                        icon: const Icon(
+                          Icons.clear,
+                          size: 18,
+                          color: Colors.grey,
+                        ),
                         onPressed: () {
                           _searchController.clear();
                           setState(() => _searchQuery = '');
@@ -213,7 +245,10 @@ class _ProjectPageState extends State<ProjectPage> {
                   borderRadius: BorderRadius.circular(30),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 15,
+                ),
               ),
             ),
           ),
@@ -249,12 +284,13 @@ class _ProjectPageState extends State<ProjectPage> {
                   );
                 }
 
-                // Filter berdasarkan _searchQuery
                 final semuaProyek = snapshot.data!;
                 final projects = _searchQuery.isEmpty
                     ? semuaProyek
                     : semuaProyek.where((p) {
-                        return p.projectName.toLowerCase().contains(_searchQuery) ||
+                        return p.projectName
+                                .toLowerCase()
+                                .contains(_searchQuery) ||
                             p.clientName.toLowerCase().contains(_searchQuery);
                       }).toList();
 
@@ -265,7 +301,8 @@ class _ProjectPageState extends State<ProjectPage> {
                       child: Text(
                         "Tidak ada hasil untuk \"$_searchQuery\".",
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                        style:
+                            TextStyle(color: Colors.grey[500], fontSize: 13),
                       ),
                     ),
                   );
@@ -296,7 +333,9 @@ class _ProjectPageState extends State<ProjectPage> {
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: Colors.grey[200]!, width: 1.0)),
+        border: Border(
+          bottom: BorderSide(color: Colors.grey[200]!, width: 1.0),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -317,6 +356,12 @@ class _ProjectPageState extends State<ProjectPage> {
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () {
+                    final koefisienMaster =
+                        context.read<KoefisienProvider>().aktif;
+                    context
+                        .read<EstimasiProvider>()
+                        .setKoefisienAktif(koefisienMaster);
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -334,7 +379,9 @@ class _ProjectPageState extends State<ProjectPage> {
                     backgroundColor: AppStyles.primaryGreen,
                     foregroundColor: Colors.white,
                     elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
                 ),
@@ -342,12 +389,21 @@ class _ProjectPageState extends State<ProjectPage> {
               const SizedBox(width: 16),
               InkWell(
                 onTap: () => _showProjectForm(project: project),
-                child: const Icon(Icons.edit_outlined, color: Colors.blue, size: 22),
+                child: const Icon(
+                  Icons.edit_outlined,
+                  color: Colors.blue,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 16),
               InkWell(
-                onTap: () => _confirmDelete(project.projectId),
-                child: const Icon(Icons.delete_outline, color: Colors.red, size: 22),
+                // Kirim ProjectModel lengkap agar nama proyek tersedia saat logging
+                onTap: () => _confirmDelete(project),
+                child: const Icon(
+                  Icons.delete_outline,
+                  color: Colors.red,
+                  size: 22,
+                ),
               ),
             ],
           ),
@@ -368,7 +424,10 @@ class _ProjectPageState extends State<ProjectPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+          Text(
+            label,
+            style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          ),
           const SizedBox(height: 8),
           TextField(
             controller: controller,
@@ -377,7 +436,10 @@ class _ProjectPageState extends State<ProjectPage> {
             decoration: InputDecoration(
               hintText: hint,
               hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(8),
                 borderSide: BorderSide(color: Colors.grey[300]!),

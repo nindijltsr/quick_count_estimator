@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'shared/services/auth_service.dart';
 import 'shared/services/estimasi_provider.dart';
+import 'shared/services/koefisien_provider.dart';  // ← baru
 import 'features/auth/auth_wrapper.dart';
 
 void main() async {
@@ -28,9 +29,15 @@ void main() async {
     );
   }
 
+  // Inisialisasi koefisien 1x sebelum runApp.
+  // Seed guard berjalan di sini — aman, tidak overwrite jika sudah ada.
+  final koefisienProvider = KoefisienProvider();
+  await koefisienProvider.inisialisasi(idAdmin: 'system');
+
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider.value(value: koefisienProvider),
         ChangeNotifierProvider(create: (_) => EstimasiProvider()),
         Provider<AuthService>(create: (_) => AuthService()),
       ],

@@ -45,14 +45,14 @@ class _PrediksiPekerjaPageState extends State<PrediksiPekerjaPage> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _provider.rekalkulasiDenganHargaTerbaru();
-      _provider.mulaiListenHargaUpah();
+      // _provider.mulaiListenHargaUpah();
     });
   }
 
   @override
   void dispose() {
     // Gunakan variabel yang udah disimpan, aman dari crash!
-    _provider.hentikanListenHargaUpah();
+    // _provider.hentikanListenHargaUpah();
     super.dispose();
   }
 

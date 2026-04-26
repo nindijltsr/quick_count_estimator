@@ -95,7 +95,8 @@ class _LoginPageState extends State<LoginPage> {
                     _showTestLoginDialog(context);
                   },
                   child: Text(
-                    "Mode Testing (Login Email)",
+                    // "Mode Testing (Login Email)",
+                    " ",
                     style: TextStyle(color: Colors.grey[400], fontSize: 12),
                   ),
                 ),
