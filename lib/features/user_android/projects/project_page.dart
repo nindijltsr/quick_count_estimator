@@ -288,9 +288,9 @@ class _ProjectPageState extends State<ProjectPage> {
                 final projects = _searchQuery.isEmpty
                     ? semuaProyek
                     : semuaProyek.where((p) {
-                        return p.projectName
-                                .toLowerCase()
-                                .contains(_searchQuery) ||
+                        return p.projectName.toLowerCase().contains(
+                              _searchQuery,
+                            ) ||
                             p.clientName.toLowerCase().contains(_searchQuery);
                       }).toList();
 
@@ -301,8 +301,7 @@ class _ProjectPageState extends State<ProjectPage> {
                       child: Text(
                         "Tidak ada hasil untuk \"$_searchQuery\".",
                         textAlign: TextAlign.center,
-                        style:
-                            TextStyle(color: Colors.grey[500], fontSize: 13),
+                        style: TextStyle(color: Colors.grey[500], fontSize: 13),
                       ),
                     ),
                   );
@@ -340,9 +339,21 @@ class _ProjectPageState extends State<ProjectPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            project.projectName,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  project.projectName,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              _buildStatusBadge(project.statusPerhitungan),
+            ],
           ),
           const SizedBox(height: 4),
           Text(
@@ -356,11 +367,12 @@ class _ProjectPageState extends State<ProjectPage> {
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    final koefisienMaster =
-                        context.read<KoefisienProvider>().aktif;
-                    context
-                        .read<EstimasiProvider>()
-                        .setKoefisienAktif(koefisienMaster);
+                    final koefisienMaster = context
+                        .read<KoefisienProvider>()
+                        .aktif;
+                    context.read<EstimasiProvider>().setKoefisienAktif(
+                      koefisienMaster,
+                    );
 
                     Navigator.push(
                       context,
@@ -408,6 +420,42 @@ class _ProjectPageState extends State<ProjectPage> {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(String? status) {
+    final Color warna;
+    final String label;
+
+    switch (status) {
+      case 'selesai':
+        warna = Colors.green;
+        label = 'Selesai';
+        break;
+      case 'sedang_berjalan':
+        warna = Colors.orange;
+        label = 'Berjalan';
+        break;
+      default:
+        warna = Colors.grey;
+        label = 'Belum Dimulai';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: warna.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: warna.withOpacity(0.4)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: warna == Colors.grey ? Colors.grey[700] : warna,
+        ),
       ),
     );
   }

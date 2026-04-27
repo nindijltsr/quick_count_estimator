@@ -2,11 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart';
 
 import '../../../shared/services/estimasi_provider.dart';
 import '../../../shared/services/koefisien_provider.dart';
-import '../../../shared/services/layanan_notifikasi.dart'; 
+import '../../../shared/services/layanan_notifikasi.dart';
 
 import 'forms/persiapan_tanah_pondasi.dart';
 import 'forms/struktur_dan_dinding.dart';
@@ -292,118 +292,133 @@ class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
             if (_adaBannerPeringatan) _buildBannerRefresh(),
 
             // ── MENU INPUT (A–F) ──────────────────────────
-            _buildTaskCard(
-              context: context,
-              title: 'Pekerjaan Persiapan, Tanah & Fondasi',
-              subtitle: 'Input dimensi lahan dan galian',
-              icon: Icons.landscape,
-              iconColor: Colors.brown,
-              bgColor: Colors.brown[50]!,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PersiapanTanahFondasiPage(
-                    projectId: widget.projectId,
-                    projectName: widget.projectName,
-                    clientName: widget.clientName,
-                  ),
-                ),
-              ),
-            ),
+            // ── MENU INPUT (A–F) ──────────────────────────
+            Consumer<EstimasiProvider>(
+              builder: (_, provider, __) {
+                return Column(
+                  children: [
+                    _buildTaskCard(
+                      context: context,
+                      title: 'Pekerjaan Persiapan, Tanah & Fondasi',
+                      subtitle: 'Input dimensi lahan dan galian',
+                      icon: Icons.landscape,
+                      iconColor: Colors.brown,
+                      bgColor: Colors.brown[50]!,
+                      sudahDiisi: provider.menuASudahDisimpan, // ← tambahan
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PersiapanTanahFondasiPage(
+                            projectId: widget.projectId,
+                            projectName: widget.projectName,
+                            clientName: widget.clientName,
+                          ),
+                        ),
+                      ),
+                    ),
 
-            _buildTaskCard(
-              context: context,
-              title: 'Pekerjaan Struktur dan Dinding',
-              subtitle: 'Input volume beton dan bata',
-              icon: Icons.foundation,
-              iconColor: Colors.blueGrey,
-              bgColor: Colors.blueGrey[50]!,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => StrukturDanDindingPage(
-                    projectId: widget.projectId,
-                    projectName: widget.projectName,
-                    clientName: widget.clientName,
-                  ),
-                ),
-              ),
-            ),
+                    _buildTaskCard(
+                      context: context,
+                      title: 'Pekerjaan Struktur dan Dinding',
+                      subtitle: 'Input volume beton dan bata',
+                      icon: Icons.foundation,
+                      iconColor: Colors.blueGrey,
+                      bgColor: Colors.blueGrey[50]!,
+                      sudahDiisi: provider.menuBSudahDisimpan, // ← tambahan
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => StrukturDanDindingPage(
+                            projectId: widget.projectId,
+                            projectName: widget.projectName,
+                            clientName: widget.clientName,
+                          ),
+                        ),
+                      ),
+                    ),
 
-            _buildTaskCard(
-              context: context,
-              title: 'Pekerjaan Lantai dan Timbunan',
-              subtitle: 'Input luasan lantai dan urugan',
-              icon: Icons.grid_on,
-              iconColor: Colors.teal,
-              bgColor: Colors.teal[50]!,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => LantaiDanTimbunanPage(
-                    projectId: widget.projectId,
-                    projectName: widget.projectName,
-                    clientName: widget.clientName,
-                  ),
-                ),
-              ),
-            ),
+                    _buildTaskCard(
+                      context: context,
+                      title: 'Pekerjaan Lantai dan Timbunan',
+                      subtitle: 'Input luasan lantai dan urugan',
+                      icon: Icons.grid_on,
+                      iconColor: Colors.teal,
+                      bgColor: Colors.teal[50]!,
+                      sudahDiisi: provider.menuCSudahDisimpan, // ← tambahan
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => LantaiDanTimbunanPage(
+                            projectId: widget.projectId,
+                            projectName: widget.projectName,
+                            clientName: widget.clientName,
+                          ),
+                        ),
+                      ),
+                    ),
 
-            _buildTaskCard(
-              context: context,
-              title: 'Pekerjaan Pintu, Jendela & Pengunci',
-              subtitle: 'Input jumlah kusen dan daun pintu',
-              icon: Icons.door_front_door,
-              iconColor: Colors.orange,
-              bgColor: Colors.orange[50]!,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => PintuJendelaPengunciPage(
-                    projectId: widget.projectId,
-                    projectName: widget.projectName,
-                    clientName: widget.clientName,
-                  ),
-                ),
-              ),
-            ),
+                    _buildTaskCard(
+                      context: context,
+                      title: 'Pekerjaan Pintu, Jendela & Pengunci',
+                      subtitle: 'Input jumlah kusen dan daun pintu',
+                      icon: Icons.door_front_door,
+                      iconColor: Colors.orange,
+                      bgColor: Colors.orange[50]!,
+                      sudahDiisi: provider.menuDSudahDisimpan, // ← tambahan
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PintuJendelaPengunciPage(
+                            projectId: widget.projectId,
+                            projectName: widget.projectName,
+                            clientName: widget.clientName,
+                          ),
+                        ),
+                      ),
+                    ),
 
-            _buildTaskCard(
-              context: context,
-              title: 'Pekerjaan Atap dan Plafon',
-              subtitle: 'Input luasan rangka dan penutup atap',
-              icon: Icons.roofing,
-              iconColor: Colors.red,
-              bgColor: Colors.red[50]!,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AtapDanPlafonPage(
-                    projectId: widget.projectId,
-                    projectName: widget.projectName,
-                    clientName: widget.clientName,
-                  ),
-                ),
-              ),
-            ),
+                    _buildTaskCard(
+                      context: context,
+                      title: 'Pekerjaan Atap dan Plafon',
+                      subtitle: 'Input luasan rangka dan penutup atap',
+                      icon: Icons.roofing,
+                      iconColor: Colors.red,
+                      bgColor: Colors.red[50]!,
+                      sudahDiisi: provider.menuESudahDisimpan, // ← tambahan
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AtapDanPlafonPage(
+                            projectId: widget.projectId,
+                            projectName: widget.projectName,
+                            clientName: widget.clientName,
+                          ),
+                        ),
+                      ),
+                    ),
 
-            _buildTaskCard(
-              context: context,
-              title: 'Pekerjaan Finishing',
-              subtitle: 'Pengecatan dan titik instalasi listrik',
-              icon: Icons.format_paint,
-              iconColor: Colors.purple,
-              bgColor: Colors.purple[50]!,
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => FinishingPage(
-                    projectId: widget.projectId,
-                    projectName: widget.projectName,
-                    clientName: widget.clientName,
-                  ),
-                ),
-              ),
+                    _buildTaskCard(
+                      context: context,
+                      title: 'Pekerjaan Finishing',
+                      subtitle: 'Pengecatan dan titik instalasi listrik',
+                      icon: Icons.format_paint,
+                      iconColor: Colors.purple,
+                      bgColor: Colors.purple[50]!,
+                      sudahDiisi: provider.menuFSudahDisimpan, // ← tambahan
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => FinishingPage(
+                            projectId: widget.projectId,
+                            projectName: widget.projectName,
+                            clientName: widget.clientName,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
 
             const Divider(height: 30, thickness: 1),
@@ -571,6 +586,7 @@ class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
     required Color iconColor,
     required Color bgColor,
     required VoidCallback onTap,
+    bool sudahDiisi = false,
   }) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -604,7 +620,9 @@ class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
           subtitle,
           style: const TextStyle(fontSize: 12, color: Colors.grey),
         ),
-        trailing: const Icon(Icons.chevron_right, color: Colors.grey),
+        trailing: sudahDiisi
+            ? const Icon(Icons.check_circle, color: Colors.green, size: 22)
+            : const Icon(Icons.chevron_right, color: Colors.grey),
         onTap: onTap,
       ),
     );
