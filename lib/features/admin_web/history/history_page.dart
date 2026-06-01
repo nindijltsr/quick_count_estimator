@@ -91,28 +91,28 @@ class _HistoryPageState extends State<HistoryPage>
 
   // helper tab 1
   String _resolveNamaUser(String id) =>
-      _cacheNamaUser[id] ?? 'Pengguna Tidak Dikenal';
+      _cacheNamaUser[id] ?? 'Pengguna Tidak Teridentifikasi';
 
   String _resolveNamaProyek(String id, {String? detail}) {
     if (id.isEmpty) return '-';
-    return _cacheNamaProyek[id] ?? detail ?? 'Proyek Dihapus';
+    return _cacheNamaProyek[id] ?? detail ?? 'Data Proyek Terhapus';
   }
 
   String _formatNamaAksi(String namaAksi) {
     switch (namaAksi) {
       case 'LOGIN':         return 'Masuk ke Sistem';
       case 'LOGOUT':        return 'Keluar dari Sistem';
-      case 'BUAT_PROYEK':   return 'Membuat Proyek Baru';
-      case 'HAPUS_PROYEK':  return 'Menghapus Proyek';
-      case 'EDIT_PROYEK':   return 'Memperbarui Data Proyek';
-      case 'KALKULASI_SELESAI': return 'Kalkulasi Estimasi Selesai';
+      case 'BUAT_PROYEK':   return 'Pembuatan Proyek Baru';
+      case 'HAPUS_PROYEK':  return 'Penghapusan Proyek';
+      case 'EDIT_PROYEK':   return 'Pembaruan Data Proyek';
+      case 'KALKULASI_SELESAI': return 'Penyelesaian Kalkulasi Estimasi';
       case 'REFRESH_MASTER':    return 'Sinkronisasi Data Master';
-      case 'SIMPAN_MENU_A': return 'Simpan Data Persiapan & Pondasi';
-      case 'SIMPAN_MENU_B': return 'Simpan Data Struktur & Dinding';
-      case 'SIMPAN_MENU_C': return 'Simpan Data Lantai & Timbunan';
-      case 'SIMPAN_MENU_D': return 'Simpan Data Pintu & Jendela';
-      case 'SIMPAN_MENU_E': return 'Simpan Data Atap & Plafon';
-      case 'SIMPAN_MENU_F': return 'Simpan Data Finishing & Listrik';
+      case 'SIMPAN_MENU_A': return 'Penyimpanan Data Persiapan & Pondasi';
+      case 'SIMPAN_MENU_B': return 'Penyimpanan Data Struktur & Dinding';
+      case 'SIMPAN_MENU_C': return 'Penyimpanan Data Lantai & Timbunan';
+      case 'SIMPAN_MENU_D': return 'Penyimpanan Data Pintu & Jendela';
+      case 'SIMPAN_MENU_E': return 'Penyimpanan Data Atap & Plafon';
+      case 'SIMPAN_MENU_F': return 'Penyimpanan Data Finishing & Listrik';
       default:
         final raw = namaAksi.replaceAll('_', ' ').toLowerCase();
         return '${raw[0].toUpperCase()}${raw.substring(1)}';
@@ -156,7 +156,7 @@ class _HistoryPageState extends State<HistoryPage>
                   fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 1.2),
             ),
             const Text(
-              'Log aktivitas surveyor dan pembaruan data master',
+              'Log aktivitas surveyor dan pembaruan data master.',
               style: TextStyle(color: Colors.grey, fontSize: 13),
             ),
             const SizedBox(height: 20),
@@ -189,7 +189,7 @@ class _HistoryPageState extends State<HistoryPage>
                 dividerColor: Colors.transparent,
                 tabs: const [
                   Tab(text: 'Riwayat Aktivitas'),
-                  Tab(text: 'Riwayat Pembaruan Master'),
+                  Tab(text: 'Riwayat Pembaruan Data'),
                 ],
               ),
             ),
@@ -221,7 +221,7 @@ class _HistoryPageState extends State<HistoryPage>
               width: 380,
               child: _buildSearchField(
                 controller: _searchAktivitasController,
-                hint: 'Cari aksi, nama user, atau nama proyek...',
+                hint: 'Cari aktivitas, nama pengguna, atau nama proyek...',
               ),
             ),
             const Spacer(),
@@ -308,7 +308,7 @@ class _HistoryPageState extends State<HistoryPage>
                   const SizedBox(width: 16),
                   const Expanded(
                     flex: 3,
-                    child: Text('Aktivitas & User',
+                    child: Text('Aktivitas & Pengguna',
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
@@ -325,7 +325,7 @@ class _HistoryPageState extends State<HistoryPage>
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                                 color: Colors.black87)),
-                        Text('${filtered.length} / $total entri',
+                        Text('${filtered.length} / $total Entri',
                             style: TextStyle(
                                 fontSize: 11, color: Colors.grey[600])),
                       ],
@@ -458,7 +458,7 @@ class _HistoryPageState extends State<HistoryPage>
               width: 380,
               child: _buildSearchField(
                 controller: _searchMasterController,
-                hint: 'Cari judul pembaruan...',
+                hint: 'Cari judul pembaruan data...',
               ),
             ),
             const Spacer(),
@@ -550,7 +550,7 @@ class _HistoryPageState extends State<HistoryPage>
                                 fontWeight: FontWeight.bold,
                                 fontSize: 13,
                                 color: Colors.black87)),
-                        Text('${filtered.length} / $total entri',
+                        Text('${filtered.length} / $total Entri',
                             style: TextStyle(
                                 fontSize: 11, color: Colors.grey[600])),
                       ],

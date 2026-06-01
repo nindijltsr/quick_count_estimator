@@ -17,7 +17,7 @@ class PricePage extends StatefulWidget {
 
 class _PricePageState extends State<PricePage> {
   final LayananMasterHarga _layananHarga = LayananMasterHarga();
-   final LayananNotifikasi _layananNotif = LayananNotifikasi();
+  final LayananNotifikasi _layananNotif = LayananNotifikasi();
   final TextEditingController _searchController = TextEditingController();
   
   int _activeTab = 0;
@@ -45,10 +45,10 @@ class _PricePageState extends State<PricePage> {
     final konfirmasi = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Inisialisasi Data Harga'),
+        title: const Text('Inisialisasi Referensi Harga'),
         content: const Text(
           'Tindakan ini akan mengisi 39 item material dan 3 data upah ke database.\n\n'
-          'Jika data sudah ada, harga akan ditimpa ke nilai default.\n\n'
+          'Jika data sudah ada, harga akan diperbarui ke nilai standar (default).\n\n'
           'Lanjutkan?',
         ),
         actions: [
@@ -56,7 +56,7 @@ class _PricePageState extends State<PricePage> {
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: AppStyles.primaryGreen),
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Ya, Inisialisasi', style: TextStyle(color: Colors.white)),
+            child: const Text('Ya, Lanjutkan', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -71,7 +71,7 @@ class _PricePageState extends State<PricePage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('39 item material & data upah berhasil diinisialisasi.'),
+            content: Text('Berhasil memuat 39 item material dan data upah standar.'),
             backgroundColor: AppStyles.primaryGreen,
             behavior: SnackBarBehavior.floating,
           ),
@@ -80,7 +80,7 @@ class _PricePageState extends State<PricePage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Gagal: $e'), backgroundColor: Colors.red),
+          SnackBar(content: Text('Terjadi kesalahan: $e'), backgroundColor: Colors.red),
         );
       }
     } finally {
@@ -96,115 +96,120 @@ class _PricePageState extends State<PricePage> {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('Edit Harga Material', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: SizedBox(
-            width: 380,
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(item.nama, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                        const SizedBox(height: 2),
-                        Text('Satuan: ${item.satuan}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-                      ],
-                    ),
+        builder: (ctx, setDialogState) {
+          // Fungsi bungkus aksi simpan agar bisa dipanggil tombol & Enter keyboard
+          Future<void> prosesSimpan() async {
+            if (!formKey.currentState!.validate()) return;
+            setDialogState(() => isLoading = true);
+
+            try {
+              final idAdmin = FirebaseAuth.instance.currentUser?.uid ?? 'system';
+              final hargaBaruVal = double.parse(controller.text);
+              
+              final hargaBaru = HargaMaterial(
+                id: item.id,
+                nama: item.nama,
+                satuan: item.satuan,
+                hargaSatuan: hargaBaruVal,
+                diperbaruidOleh: idAdmin,
+                diperbaruidPada: DateTime.now(),
+              );
+              
+              await _layananHarga.simpanHargaMaterial(hargaBaru);
+
+              await _layananNotif.catatPembaruan(
+                judul: 'Pembaruan Harga: ${item.nama}',
+                idAdmin: idAdmin,
+                hargaLama: item.hargaSatuan, 
+                hargaBaru: hargaBaruVal,     
+              );
+
+              if (ctx.mounted) {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Harga ${item.nama} telah diperbarui.'),
+                    backgroundColor: AppStyles.primaryGreen,
+                    behavior: SnackBarBehavior.floating,
                   ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: controller,
-                    autofocus: true,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                    decoration: InputDecoration(
-                      labelText: 'Harga Satuan (Rp)',
-                      prefixText: 'Rp ',
-                      border: const OutlineInputBorder(),
-                      suffixText: '/ ${item.satuan}',
+                );
+              }
+            } catch (e) {
+              setDialogState(() => isLoading = false);
+              if (ctx.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Gagal menyimpan: $e'), backgroundColor: Colors.red),
+                );
+              }
+            }
+          }
+
+          return AlertDialog(
+            title: const Text('Ubah Harga Material', style: TextStyle(fontWeight: FontWeight.bold)),
+            content: SizedBox(
+              width: 380,
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(item.nama, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                          const SizedBox(height: 2),
+                          Text('Satuan: ${item.satuan}', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                        ],
+                      ),
                     ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Harga wajib diisi';
-                      if (double.tryParse(v) == null) return 'Format angka tidak valid';
-                      if (double.parse(v) <= 0) return 'Harga harus lebih dari 0';
-                      return null;
-                    },
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: controller,
+                      autofocus: true,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) => isLoading ? null : prosesSimpan(), // Dukungan Enter Keyboard
+                      decoration: InputDecoration(
+                        labelText: 'Harga Satuan',
+                        prefixText: 'Rp ',
+                        border: const OutlineInputBorder(),
+                        suffixText: '/ ${item.satuan}',
+                      ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Mohon masukkan harga.';
+                        if (double.tryParse(v) == null) return 'Format nominal tidak valid.';
+                        if (double.parse(v) <= 0) return 'Harga harus lebih besar dari nol.';
+                        return null;
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: isLoading ? null : () => Navigator.pop(ctx),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppStyles.primaryGreen),
-              onPressed: isLoading
-                  ? null
-                  : () async {
-                      if (!formKey.currentState!.validate()) return;
-                      setDialogState(() => isLoading = true);
-
-                      try {
-                        final idAdmin = FirebaseAuth.instance.currentUser?.uid ?? 'system';
-                        final hargaBaruVal = double.parse(controller.text);
-                        
-                        final hargaBaru = HargaMaterial(
-                          id: item.id,
-                          nama: item.nama,
-                          satuan: item.satuan,
-                          hargaSatuan: hargaBaruVal,
-                          diperbaruidOleh: idAdmin,
-                          diperbaruidPada: DateTime.now(),
-                        );
-                        
-                        await _layananHarga.simpanHargaMaterial(hargaBaru);
-
-                        await _layananNotif.catatPembaruan(
-                          judul: 'Pembaruan Harga: ${item.nama}',
-                          idAdmin: idAdmin,
-                          hargaLama: item.hargaSatuan, 
-                          hargaBaru: hargaBaruVal,     
-                        );
-
-                        if (ctx.mounted) {
-                          Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Harga ${item.nama} berhasil diperbarui.'),
-                              backgroundColor: AppStyles.primaryGreen,
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        setDialogState(() => isLoading = false);
-                        if (ctx.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Gagal menyimpan: $e'), backgroundColor: Colors.red),
-                          );
-                        }
-                      }
-                    },
-              child: isLoading
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Simpan', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
+            actions: [
+              TextButton(
+                onPressed: isLoading ? null : () => Navigator.pop(ctx),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppStyles.primaryGreen),
+                onPressed: isLoading ? null : prosesSimpan,
+                child: isLoading
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Simpan Perubahan', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -219,121 +224,124 @@ class _PricePageState extends State<PricePage> {
     showDialog(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDialogState) => AlertDialog(
-          title: const Text('Edit Harga Upah Pekerja', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: SizedBox(
-            width: 380,
-            child: Form(
-              key: formKey,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _buildUpahField(pekController, 'Upah Pekerja / OH'),
-                  const SizedBox(height: 12),
-                  _buildUpahField(tukController, 'Upah Tukang / OH'),
-                  const SizedBox(height: 12),
-                  _buildUpahField(manController, 'Upah Mandor / OH'),
-                  const SizedBox(height: 10),
-                  Text(
-                    'OH = Orang-Hari. Nilai ini digunakan langsung dalam kalkulasi biaya upah seluruh proyek.',
-                    style: TextStyle(fontSize: 11, color: Colors.grey[600], fontStyle: FontStyle.italic),
+        builder: (ctx, setDialogState) {
+          Future<void> prosesSimpanUpah() async {
+            if (!formKey.currentState!.validate()) return;
+            setDialogState(() => isLoading = true);
+
+            try {
+              final idAdmin = FirebaseAuth.instance.currentUser?.uid ?? 'system';
+              final pekerjaLama = upah.pekerja;
+              final tukangLama = upah.tukang;
+              final mandorLama = upah.mandor;
+              final pekerjaBaru = double.parse(pekController.text);
+              final tukangBaru = double.parse(tukController.text);
+              final mandorBaru = double.parse(manController.text);
+
+              final upahBaru = HargaUpah(
+                pekerja: pekerjaBaru,
+                tukang: tukangBaru,
+                mandor: mandorBaru,
+                diperbaruidOleh: idAdmin,
+                diperbaruidPada: DateTime.now(),
+              );
+              
+              await _layananHarga.simpanHargaUpah(upahBaru);
+
+              if ((pekerjaLama - pekerjaBaru).abs() > 0.01) {
+                await _layananNotif.catatPembaruan(
+                  judul: 'Pembaruan Harga Upah: Pekerja',
+                  idAdmin: idAdmin,
+                  hargaLama: pekerjaLama,
+                  hargaBaru: pekerjaBaru,
+                );
+              }
+              if ((tukangLama - tukangBaru).abs() > 0.01) {
+                await _layananNotif.catatPembaruan(
+                  judul: 'Pembaruan Harga Upah: Tukang',
+                  idAdmin: idAdmin,
+                  hargaLama: tukangLama,
+                  hargaBaru: tukangBaru,
+                );
+              }
+              if ((mandorLama - mandorBaru).abs() > 0.01) {
+                await _layananNotif.catatPembaruan(
+                  judul: 'Pembaruan Harga Upah: Mandor',
+                  idAdmin: idAdmin,
+                  hargaLama: mandorLama,
+                  hargaBaru: mandorBaru,
+                );
+              }
+
+              if (ctx.mounted) {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Data standar upah telah diperbarui.'),
+                    backgroundColor: AppStyles.primaryGreen,
+                    behavior: SnackBarBehavior.floating,
                   ),
-                ],
+                );
+              }
+            } catch (e) {
+              setDialogState(() => isLoading = false);
+              if (ctx.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Gagal menyimpan: $e'), backgroundColor: Colors.red),
+                );
+              }
+            }
+          }
+
+          return AlertDialog(
+            title: const Text('Ubah Standar Upah Tenaga Kerja', style: TextStyle(fontWeight: FontWeight.bold)),
+            content: SizedBox(
+              width: 380,
+              child: Form(
+                key: formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildUpahField(pekController, 'Upah Pekerja', nextAction: true),
+                    const SizedBox(height: 12),
+                    _buildUpahField(tukController, 'Upah Tukang', nextAction: true),
+                    const SizedBox(height: 12),
+                    _buildUpahField(manController, 'Upah Mandor', onSubmitAction: prosesSimpanUpah),
+                    const SizedBox(height: 10),
+                    Text(
+                      'OH = Orang-Hari. Nilai ini digunakan sebagai referensi kalkulasi biaya tenaga kerja pada seluruh proyek.',
+                      style: TextStyle(fontSize: 11, color: Colors.grey[600], fontStyle: FontStyle.italic),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: isLoading ? null : () => Navigator.pop(ctx),
-              child: const Text('Batal'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: AppStyles.primaryGreen),
-              onPressed: isLoading
-                  ? null
-                  : () async {
-                      if (!formKey.currentState!.validate()) return;
-                      setDialogState(() => isLoading = true);
-
-                      try {
-                        final idAdmin = FirebaseAuth.instance.currentUser?.uid ?? 'system';
-                        final pekerjaLama = upah.pekerja;
-                        final tukangLama = upah.tukang;
-                        final mandorLama = upah.mandor;
-                        final pekerjaBaru = double.parse(pekController.text);
-                        final tukangBaru = double.parse(tukController.text);
-                        final mandorBaru = double.parse(manController.text);
-
-                        final upahBaru = HargaUpah(
-                          pekerja: pekerjaBaru,
-                          tukang: tukangBaru,
-                          mandor: mandorBaru,
-                          diperbaruidOleh: idAdmin,
-                          diperbaruidPada: DateTime.now(),
-                        );
-                        
-                        await _layananHarga.simpanHargaUpah(upahBaru);
-
-                        // Diffing upah pekerja 1 1
-                        if ((pekerjaLama - pekerjaBaru).abs() > 0.01) {
-                          await _layananNotif.catatPembaruan(
-                            judul: 'Pembaruan Harga Upah: Pekerja',
-                            idAdmin: idAdmin,
-                            hargaLama: pekerjaLama,
-                            hargaBaru: pekerjaBaru,
-                          );
-                        }
-                        if ((tukangLama - tukangBaru).abs() > 0.01) {
-                          await _layananNotif.catatPembaruan(
-                            judul: 'Pembaruan Harga Upah: Tukang',
-                            idAdmin: idAdmin,
-                            hargaLama: tukangLama,
-                            hargaBaru: tukangBaru,
-                          );
-                        }
-                        if ((mandorLama - mandorBaru).abs() > 0.01) {
-                          await _layananNotif.catatPembaruan(
-                            judul: 'Pembaruan Harga Upah: Mandor',
-                            idAdmin: idAdmin,
-                            hargaLama: mandorLama,
-                            hargaBaru: mandorBaru,
-                          );
-                        }
-
-                        if (ctx.mounted) {
-                          Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Harga upah berhasil diperbarui.'),
-                              backgroundColor: AppStyles.primaryGreen,
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        setDialogState(() => isLoading = false);
-                        if (ctx.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Gagal menyimpan: $e'), backgroundColor: Colors.red),
-                          );
-                        }
-                      }
-                    },
-              child: isLoading
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : const Text('Simpan', style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
+            actions: [
+              TextButton(
+                onPressed: isLoading ? null : () => Navigator.pop(ctx),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: AppStyles.primaryGreen),
+                onPressed: isLoading ? null : prosesSimpanUpah,
+                child: isLoading
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Text('Simpan Perubahan', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
 
-  TextFormField _buildUpahField(TextEditingController ctrl, String label) {
+  TextFormField _buildUpahField(TextEditingController ctrl, String label, {bool nextAction = false, VoidCallback? onSubmitAction}) {
     return TextFormField(
       controller: ctrl,
       keyboardType: TextInputType.number,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      textInputAction: nextAction ? TextInputAction.next : TextInputAction.done,
+      onFieldSubmitted: (_) => onSubmitAction != null ? onSubmitAction() : null,
       decoration: InputDecoration(
         labelText: label,
         prefixText: 'Rp ',
@@ -364,11 +372,11 @@ class _PricePageState extends State<PricePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'MASTER HARGA',
+                      'DATA MASTER HARGA',
                       style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 1.2),
                     ),
                     Text(
-                      'Kelola harga material dan upah tenaga kerja',
+                      'Kelola referensi harga material dan upah tenaga kerja.',
                       style: TextStyle(color: Colors.grey, fontSize: 13),
                     ),
                   ],
@@ -379,7 +387,7 @@ class _PricePageState extends State<PricePage> {
                   icon: _isSeedLoading
                       ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2))
                       : const Icon(Icons.system_update_alt, size: 16),
-                  label: const Text('Inisialisasi Data', style: TextStyle(fontSize: 13)),
+                  label: const Text('Muat Data Standar', style: TextStyle(fontSize: 13)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.grey[700],
                     side: BorderSide(color: Colors.grey[400]!),
@@ -399,8 +407,8 @@ class _PricePageState extends State<PricePage> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildTabButton(0, 'Harga Material'),
-                  _buildTabButton(1, 'Harga Upah Pekerja'),
+                  _buildTabButton(0, 'Daftar Material'),
+                  _buildTabButton(1, 'Upah Tenaga Kerja'),
                 ],
               ),
             ),
@@ -485,7 +493,7 @@ class _PricePageState extends State<PricePage> {
                   child: Row(
                     children: [
                       Text(
-                        '${filtered.length} dari ${semuaItem.length} item',
+                        '${filtered.length} dari ${semuaItem.length} Item',
                         style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                       ),
                     ],
@@ -515,12 +523,12 @@ class _PricePageState extends State<PricePage> {
                             columnSpacing: 20,
                             dividerThickness: 1,
                             columns: const [
-                              DataColumn(label: Text('No')),
+                              DataColumn(label: Text('No.')),
                               DataColumn(label: Text('Nama Material')),
                               DataColumn(label: Text('Satuan')),
                               DataColumn(label: Text('Harga Satuan'), numeric: true),
-                              DataColumn(label: Text('Terakhir Diperbarui')),
-                              DataColumn(label: Text('Aksi')),
+                              DataColumn(label: Text('Pembaruan Terakhir')),
+                              DataColumn(label: Text('Tindakan')),
                             ],
                             rows: List.generate(filtered.length, (i) {
                               final item = filtered[i];
@@ -571,7 +579,7 @@ class _PricePageState extends State<PricePage> {
           TextButton.icon(
             onPressed: () => _showEditMaterialDialog(item),
             icon: const Icon(Icons.edit_outlined, size: 15),
-            label: const Text('Edit', style: TextStyle(fontSize: 13)),
+            label: const Text('Ubah', style: TextStyle(fontSize: 13)),
             style: TextButton.styleFrom(
               foregroundColor: AppStyles.primaryGreen,
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -640,19 +648,19 @@ class _PricePageState extends State<PricePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Terakhir diperbarui: ${_formatTanggal.format(upah.diperbaruidPada)}',
+                        'Pembaruan terakhir: ${_formatTanggal.format(upah.diperbaruidPada)}',
                         style: TextStyle(fontSize: 11, color: Colors.grey[500], fontStyle: FontStyle.italic),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Nilai ini mempengaruhi kalkulasi biaya upah di seluruh proyek secara real-time.',
+                        'Data ini memengaruhi perhitungan biaya tenaga kerja pada seluruh proyek secara otomatis.',
                         style: TextStyle(fontSize: 11, color: Colors.grey[600], fontStyle: FontStyle.italic),
                       ),
                       const SizedBox(height: 14),
                       ElevatedButton.icon(
                         onPressed: () => _showEditUpahDialog(upah),
                         icon: const Icon(Icons.edit_outlined, size: 16, color: Colors.white),
-                        label: const Text('Edit Harga Upah', style: TextStyle(color: Colors.white)),
+                        label: const Text('Ubah Harga Upah', style: TextStyle(color: Colors.white)),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppStyles.primaryGreen,
                           elevation: 0,
@@ -720,7 +728,7 @@ class _PricePageState extends State<PricePage> {
           Icon(Icons.inventory_2_outlined, size: 60, color: Colors.grey[300]),
           const SizedBox(height: 16),
           Text(
-            pesan ?? 'Belum ada data.\nTekan "Inisialisasi Data" untuk mengisi data default.',
+            pesan ?? 'Data referensi harga belum tersedia.\nKlik "Muat Data Standar" untuk mengisi nilai default.',
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.grey[500], fontSize: 13, height: 1.6),
           ),

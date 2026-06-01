@@ -46,7 +46,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
                     TextFormField(
                       controller: nameController,
                       decoration: const InputDecoration(labelText: "Nama Lengkap", border: OutlineInputBorder(), prefixIcon: Icon(Icons.person)),
-                      validator: (value) => value!.isEmpty ? "Nama wajib diisi" : null,
+                      validator: (value) => value!.isEmpty ? "Mohon masukkan nama lengkap." : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
@@ -64,10 +64,10 @@ class _UserManagementPageState extends State<UserManagementPage> {
                     const SizedBox(height: 16),
                     DropdownButtonFormField<String>(
                       value: selectedRole,
-                      decoration: const InputDecoration(labelText: "Jabatan / Role", border: OutlineInputBorder(), prefixIcon: Icon(Icons.badge)),
+                      decoration: const InputDecoration(labelText: "Peran Pengguna", border: OutlineInputBorder(), prefixIcon: Icon(Icons.badge)),
                       items: const [
-                        DropdownMenuItem(value: 'user', child: Text("Surveyor (User)")),
-                        DropdownMenuItem(value: 'admin', child: Text("Admin")),
+                        DropdownMenuItem(value: 'user', child: Text("Surveyor (Pengguna Standar)")),
+                        DropdownMenuItem(value: 'admin', child: Text("Administrator")),
                       ],
                       onChanged: (value) {
                         if (value != null) selectedRole = value;
@@ -96,11 +96,11 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   await _userService.addUser(newUser);
                   if (mounted) {
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Berhasil menambahkan pengguna!"), backgroundColor: Colors.green));
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Data pengguna baru telah berhasil ditambahkan."), backgroundColor: Colors.green));
                   }
                 }
               },
-              child: const Text("Simpan", style: TextStyle(color: Colors.white)),
+              child: const Text("Simpan Data", style: TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -124,7 +124,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text("Edit Data Pengguna"),
+              title: const Text("Ubah Informasi Pengguna"),
               content: SizedBox(
                 width: 400,
                 child: Form(
@@ -135,28 +135,28 @@ class _UserManagementPageState extends State<UserManagementPage> {
                       children: [
                         TextFormField(
                           controller: nameController,
-                          decoration: const InputDecoration(labelText: "Nama Lengkap", border: OutlineInputBorder(), prefixIcon: Icon(Icons.person)),
+                          decoration: const InputDecoration(labelText: "Nama Lengkap Pengguna", border: OutlineInputBorder(), prefixIcon: Icon(Icons.person)),
                           validator: (value) => value!.isEmpty ? "Nama wajib diisi" : null,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: emailController,
-                          decoration: const InputDecoration(labelText: "Email Google", border: OutlineInputBorder(), prefixIcon: Icon(Icons.email)),
-                          validator: (value) => value!.isEmpty ? "Email wajib diisi" : null,
+                          decoration: const InputDecoration(labelText: "Alamat Email (Google Account)", border: OutlineInputBorder(), prefixIcon: Icon(Icons.email)),
+                          validator: (value) => value!.isEmpty ? "Mohon masukkan alamat email." : null,
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: phoneController,
                           decoration: const InputDecoration(labelText: "Nomor Telepon / WA", border: OutlineInputBorder(), prefixIcon: Icon(Icons.phone)),
-                          validator: (value) => value!.isEmpty ? "Nomor telepon wajib diisi" : null,
+                          validator: (value) => value!.isEmpty ? "Mohon masukkan nomor kontak." : null,
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
                           value: selectedRole,
-                          decoration: const InputDecoration(labelText: "Jabatan / Role", border: OutlineInputBorder(), prefixIcon: Icon(Icons.badge)),
+                          decoration: const InputDecoration(labelText: "Peran Pengguna", border: OutlineInputBorder(), prefixIcon: Icon(Icons.badge)),
                           items: const [
                             DropdownMenuItem(value: 'user', child: Text("Surveyor (User)")),
-                            DropdownMenuItem(value: 'admin', child: Text("Admin")),
+                            DropdownMenuItem(value: 'admin', child: Text("Administrator")),
                           ],
                           onChanged: (value) {
                             if (value != null) selectedRole = value;
@@ -164,8 +164,8 @@ class _UserManagementPageState extends State<UserManagementPage> {
                         ),
                         const SizedBox(height: 16),
                         SwitchListTile(
-                          title: const Text("Status Akun Aktif"),
-                          subtitle: Text(currentStatus ? "User bisa akses aplikasi" : "User diblokir"),
+                          title: const Text("Status Aktivitas Akun"),
+                          subtitle: Text(currentStatus ? "Pengguna memiliki izin akses sistem." : "Akses pengguna ditangguhkan."),
                           value: currentStatus,
                           activeColor: AppStyles.primaryGreen,
                           onChanged: (bool val) {
@@ -197,11 +197,11 @@ class _UserManagementPageState extends State<UserManagementPage> {
                       await _userService.updateUser(updatedUser);
                       if (mounted) {
                         Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Data berhasil diperbarui!")));
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Perubahan data pengguna telah berhasil disimpan.")));
                       }
                     }
                   },
-                  child: const Text("Update", style: TextStyle(color: Colors.white)),
+                  child: const Text("Perbarui Data", style: TextStyle(color: Colors.white)),
                 ),
               ],
             );
@@ -216,8 +216,8 @@ class _UserManagementPageState extends State<UserManagementPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text("Hapus Pengguna"),
-        content: Text("Yakin ingin menghapus data $name?"),
+        title: const Text("Konfirmasi Penghapusan"),
+        content: Text("Apakah Anda yakin ingin menghapus data $name secara permanen dari sistem?"),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
           ElevatedButton(
@@ -226,7 +226,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
               await _userService.deleteUser(uid);
               if (mounted) Navigator.pop(context);
             },
-            child: const Text("Hapus", style: TextStyle(color: Colors.white)),
+            child: const Text("Hapus Data", style: TextStyle(color: Colors.white)),
           )
         ],
       ),
@@ -250,13 +250,13 @@ class _UserManagementPageState extends State<UserManagementPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('MANAJEMEN AKUN', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-                    Text('Kelola Akun Pengguna (Whitelist)', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                    Text('Manajemen otoritas akses dan daftar pengguna sistem.', style: TextStyle(color: Colors.grey, fontSize: 13)),
                   ],
                 ),
                 ElevatedButton.icon(
                   onPressed: _showAddUserDialog,
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('Tambah Pengguna'),
+                  label: const Text('Formulir Registrasi Pengguna'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppStyles.primaryGreen, 
                     foregroundColor: Colors.white,
@@ -275,7 +275,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
                 controller: _searchController,
                 onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
                 decoration: InputDecoration(
-                  hintText: 'Cari nama atau email...',
+                  hintText: 'Cari berdasarkan nama atau email...',
                   hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
                   prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey[500]),
                   filled: true,
@@ -305,7 +305,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
                 stream: _userService.getUsers(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
-                  if (!snapshot.hasData || snapshot.data!.isEmpty) return const Center(child: Text("Belum ada data pengguna."));
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) return const Center(child: Text("Tidak ada data pengguna yang tersedia."));
 
                   final users = snapshot.data!.where((user) {
                     return user.name.toLowerCase().contains(_searchQuery) || user.email.toLowerCase().contains(_searchQuery);
@@ -336,14 +336,14 @@ class _UserManagementPageState extends State<UserManagementPage> {
                                   headingRowColor: WidgetStateProperty.all(const Color(0xFFE3EAE6)), 
                                   columnSpacing: 20,
                                   columns: const [
-                                    DataColumn(label: Text('No', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text('No.', style: TextStyle(fontWeight: FontWeight.bold))),
                                     DataColumn(label: Text('Nama Lengkap', style: TextStyle(fontWeight: FontWeight.bold))),
-                                    DataColumn(label: Text('Email', style: TextStyle(fontWeight: FontWeight.bold))),
-                                    DataColumn(label: Text('No. HP', style: TextStyle(fontWeight: FontWeight.bold))),
-                                    DataColumn(label: Text('Jabatan', style: TextStyle(fontWeight: FontWeight.bold))),
-                                    DataColumn(label: Text('Tanggal Dibuat', style: TextStyle(fontWeight: FontWeight.bold))), 
-                                    DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-                                    DataColumn(label: Text('Aksi', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text('Alamat Email', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text('Nomor Kontak', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text('Peran Sistem', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text('Tanggal Registrasi', style: TextStyle(fontWeight: FontWeight.bold))), 
+                                    DataColumn(label: Text('Status Akun', style: TextStyle(fontWeight: FontWeight.bold))),
+                                    DataColumn(label: Text('Tindakan', style: TextStyle(fontWeight: FontWeight.bold))),
                                   ],
                                   rows: List.generate(users.length, (index) => _buildRow(index + 1, users[index])),
                                 ),
@@ -396,7 +396,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
       ),
       DataCell(
         isCurrentUser
-        ? const Text("(Akun Saya)", style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic, fontSize: 12))
+        ? const Text("(Sesi Saat Ini)", style: TextStyle(color: Colors.grey, fontStyle: FontStyle.italic, fontSize: 12))
         : Row(
             mainAxisSize: MainAxisSize.min, 
             children: [

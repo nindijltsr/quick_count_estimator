@@ -6,6 +6,7 @@ import '../../../shared/models/project_model.dart';
 import '../../../shared/models/model_input_surveyor.dart';
 import '../../../shared/models/model_hasil_perhitungan.dart';
 import '../../../shared/utils/styles.dart';
+import '../../../shared/utils/pdf_generator.dart';
 
 class ProjectDetailPage extends StatefulWidget {
   final ProjectModel project;
@@ -28,6 +29,15 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
   // Data dari Firestore
   InputSurveyor? _input;
   HasilMenuG? _hasilG;
+
+  // Opsi B — hasil menu A-F untuk PDF full detail
+  HasilMenuA? _hasilA;
+  HasilMenuB? _hasilB;
+  HasilMenuC? _hasilC;
+  HasilMenuD? _hasilD;
+  HasilMenuE? _hasilE;
+  HasilMenuF? _hasilF;
+
   bool _isLoading = true;
   String? _error;
 
@@ -52,33 +62,79 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       final refProyek = FirebaseFirestore.instance
           .collection('projects')
           .doc(idProyek);
+      final refHasil = refProyek.collection('hasil_perhitungan');
 
+      // Fetch semua data sekaligus — 8 read paralel
       final results = await Future.wait([
-        refProyek.collection('inputUser').doc('data').get(),
-        refProyek.collection('hasil_perhitungan').doc('estimasi_upah').get(),
+        refProyek.collection('inputUser').doc('data').get(), // [0]
+        refHasil.doc('estimasi_upah').get(), // [1]
+        refHasil.doc('menu_a').get(), // [2]
+        refHasil.doc('menu_b').get(), // [3]
+        refHasil.doc('menu_c').get(), // [4]
+        refHasil.doc('menu_d').get(), // [5]
+        refHasil.doc('menu_e').get(), // [6]
+        refHasil.doc('menu_f').get(), // [7]
       ]);
 
       final inputDoc = results[0] as DocumentSnapshot<Map<String, dynamic>>;
       final menuGDoc = results[1] as DocumentSnapshot<Map<String, dynamic>>;
+      final menuADoc = results[2] as DocumentSnapshot<Map<String, dynamic>>;
+      final menuBDoc = results[3] as DocumentSnapshot<Map<String, dynamic>>;
+      final menuCDoc = results[4] as DocumentSnapshot<Map<String, dynamic>>;
+      final menuDDoc = results[5] as DocumentSnapshot<Map<String, dynamic>>;
+      final menuEDoc = results[6] as DocumentSnapshot<Map<String, dynamic>>;
+      final menuFDoc = results[7] as DocumentSnapshot<Map<String, dynamic>>;
 
       InputSurveyor? input;
-      if (inputDoc.exists) {
-        input = InputSurveyor.dariFirestore(inputDoc);
-      }
+      if (inputDoc.exists) input = InputSurveyor.dariFirestore(inputDoc);
 
       HasilMenuG? hasilG;
       if (menuGDoc.exists && menuGDoc.data() != null) {
         hasilG = HasilMenuG.dariFirestore(menuGDoc.data()!);
       }
 
-      _VolumePerhitungan? vol;
-      if (input != null) {
-        vol = _VolumePerhitungan.dariInput(input);
+      HasilMenuA? hasilA;
+      if (menuADoc.exists && menuADoc.data() != null) {
+        hasilA = HasilMenuA.dariFirestore(menuADoc.data()!);
       }
+
+      HasilMenuB? hasilB;
+      if (menuBDoc.exists && menuBDoc.data() != null) {
+        hasilB = HasilMenuB.dariFirestore(menuBDoc.data()!);
+      }
+
+      HasilMenuC? hasilC;
+      if (menuCDoc.exists && menuCDoc.data() != null) {
+        hasilC = HasilMenuC.dariFirestore(menuCDoc.data()!);
+      }
+
+      HasilMenuD? hasilD;
+      if (menuDDoc.exists && menuDDoc.data() != null) {
+        hasilD = HasilMenuD.dariFirestore(menuDDoc.data()!);
+      }
+
+      HasilMenuE? hasilE;
+      if (menuEDoc.exists && menuEDoc.data() != null) {
+        hasilE = HasilMenuE.dariFirestore(menuEDoc.data()!);
+      }
+
+      HasilMenuF? hasilF;
+      if (menuFDoc.exists && menuFDoc.data() != null) {
+        hasilF = HasilMenuF.dariFirestore(menuFDoc.data()!);
+      }
+
+      _VolumePerhitungan? vol;
+      if (input != null) vol = _VolumePerhitungan.dariInput(input);
 
       setState(() {
         _input = input;
         _hasilG = hasilG;
+        _hasilA = hasilA;
+        _hasilB = hasilB;
+        _hasilC = hasilC;
+        _hasilD = hasilD;
+        _hasilE = hasilE;
+        _hasilF = hasilF;
         _vol = vol;
         _isLoading = false;
       });
@@ -90,10 +146,10 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
     }
   }
 
-  // Ambil harga dari snapshot 
+  // Ambil harga dari snapshot
   double _hp(String id) => _snapshotHarga[id] ?? 0;
 
-  // Ambil koefisien dari snapshot 
+  // Ambil koefisien dari snapshot
   double _k(String key) => _snapshotKoefisien[key] ?? 0.0;
 
   @override
@@ -138,13 +194,146 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                 const Icon(Icons.arrow_back, size: 18, color: Colors.black87),
                 const SizedBox(width: 6),
                 Text(
-                  'Kembali ke daftar',
+                  'Kembali ke daftar Proyek',
                   style: TextStyle(fontSize: 13, color: Colors.grey[700]),
                 ),
               ],
             ),
           ),
           const Spacer(),
+
+          // Tombol cetak PDF
+          ElevatedButton.icon(
+            onPressed: (_hasilG == null || _vol == null)
+                ? null
+                : () async {
+                    // Hitung total material biar akurat 100% persis kayak di layar
+                    final subA = _hitungSubTotalA(_vol!);
+                    final subB = _hitungSubTotalB(_vol!);
+                    final subC = _hitungSubTotalC(_vol!);
+                    final subD = _hitungSubTotalD(_vol!);
+                    final subE = _hitungSubTotalE(_vol!);
+                    final subF = _hitungSubTotalF(_vol!);
+                    final totalMatAkurat =
+                        subA + subB + subC + subD + subE + subF;
+
+                    final a = HasilMenuA(
+                      volBersih: _vol!.volBersih,
+                      volBouwplank: _vol!.volBouwplank,
+                      volGalianMenerus: _vol!.volGalianMenerus,
+                      volPasirMenerus: _vol!.volPasirMenerus,
+                      volAanstampMenerus: _vol!.volAanstampMenerus,
+                      volBatuKali: _vol!.volBatuKali,
+                      volGalianTapak: _vol!.volGalianTapak,
+                      volPasirTapak: _vol!.volPasirTapak,
+                      volAanstampTapak: _vol!.volAanstampTapak,
+                      volBetonTapak: _vol!.volBetonTapak,
+                      volUrugMenerus: _vol!.volUrugMenerus,
+                      volUrugTapak: _vol!.volUrugTapak,
+                      dihitungPada: DateTime.now(),
+                    );
+                    final b = HasilMenuB(
+                      volSloof: _vol!.volSloof,
+                      volKolom: _vol!.volKolom,
+                      volRingBalok: _vol!.volRingBalok,
+                      volDinding: _vol!.volDinding,
+                      volPlester: _vol!.volPlester,
+                      volAcian: _vol!.volAcian,
+                      dihitungPada: DateTime.now(),
+                    );
+                    final c = HasilMenuC(
+                      luasLantai: _vol!.luasLantai,
+                      volTimbunan: _vol!.volTimbunan,
+                      volPasirLantai: _vol!.volPasirLantai,
+                      volCorLantai: _vol!.volCorLantai,
+                      volKeramik: _vol!.volKeramik,
+                      dihitungPada: DateTime.now(),
+                    );
+                    final d = HasilMenuD(
+                      volKusenPintu: _vol!.volKusenPintu,
+                      volDaunPintu: _vol!.volDaunPintu,
+                      volKusenVentilasi: _vol!.volKusenVentilasi,
+                      jmlKunci: _vol!.jmlKunci,
+                      jmlEngselPintu: _vol!.jmlEngselPintu,
+                      volKusenJendela: _vol!.volKusenJendela,
+                      volDaunJendela: _vol!.volDaunJendela,
+                      volKaca: _vol!.volKaca,
+                      jmlEngselJendela: _vol!.jmlEngselJendela,
+                      volKusenTotal:
+                          _vol!.volKusenPintu +
+                          _vol!.volKusenVentilasi +
+                          _vol!.volKusenJendela,
+                      dihitungPada: DateTime.now(),
+                    );
+                    final e = HasilMenuE(
+                      volPlafon: _vol!.volPlafon,
+                      volListPlafon: _vol!.volListPlafon,
+                      volRangkaAtap: _vol!.volRangkaAtap,
+                      volGenteng: _vol!.volGenteng,
+                      volListplank: _vol!.volListplank,
+                      volNok: _vol!.volNok,
+                      dihitungPada: DateTime.now(),
+                    );
+                    final f = HasilMenuF(
+                      volCatTembok: _vol!.volCatTembok,
+                      volCatPlafon: _vol!.volCatPlafon,
+                      volCatKayu: _vol!.volCatKayu,
+                      volLampu: _vol!.jmlLampu,
+                      volSaklar1: _vol!.jmlSaklar1,
+                      volSaklar2: _vol!.jmlSaklar2,
+                      volStopKontak: _vol!.jmlStopKontak,
+                      dihitungPada: DateTime.now(),
+                    );
+
+                    await generateRABPdf(
+                      data: DataPdfRAB(
+                        namaProyek: widget.project.projectName,
+                        namaKlien: widget.project.clientName,
+                        namaSurveyor: widget.project.surveyorName,
+
+                        // tanggal dokumen dicetak
+                        tanggalDibuat: DateTime.now(),
+
+                        // FIX TOTAL: Pake total dari layar!
+                        overrideTotalMaterial: totalMatAkurat,
+
+                        menuA: a,
+                        menuB: b,
+                        menuC: c,
+                        menuD: d,
+                        menuE: e,
+                        menuF: f,
+                        menuG: _hasilG,
+                        snapshotHarga: _snapshotHarga,
+                        snapshotKoefisien: _snapshotKoefisien,
+                      ),
+                    );
+                  },
+            icon: const Icon(
+              Icons.picture_as_pdf_outlined,
+              size: 15,
+              color: Colors.white,
+            ),
+            label: const Text(
+              'Unduh Laporan PDF',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppStyles.primaryGreen,
+              disabledBackgroundColor: Colors.grey[300],
+              elevation: 0,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+
           if (widget.project.tanggalSnapshotDiambil != null)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -158,7 +347,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                   Icon(Icons.lock_outline, size: 13, color: Colors.green[700]),
                   const SizedBox(width: 5),
                   Text(
-                    'Harga terkunci per ${_formatTanggal.format(widget.project.tanggalSnapshotDiambil!)}',
+                    'Referensi Harga Terkunci Per ${_formatTanggal.format(widget.project.tanggalSnapshotDiambil!)}',
                     style: TextStyle(fontSize: 11, color: Colors.green[700]),
                   ),
                 ],
@@ -202,7 +391,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
             child: Column(
               children: [
                 const Text(
-                  'RENCANA ANGGARAN BIAYA (RAB)',
+                  'ESTIMASI ANGGARAN BIAYA',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -211,7 +400,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'ESTIMASI CEPAT — ${widget.project.projectName.toUpperCase()}',
+                  'QUICK COUNT ESTIMASI — ${widget.project.projectName.toUpperCase()}',
                   style: TextStyle(fontSize: 13, color: Colors.grey[600]),
                 ),
                 const SizedBox(height: 4),
@@ -227,7 +416,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
           // Catatan snapshot
           if (_snapshotHarga.isEmpty)
             _buildWarningBanner(
-              'Snapshot harga belum tersedia. Selesaikan kalkulasi di Mobile App terlebih dahulu.',
+              'Snapshot harga belum tersedia. Mohon selesaikan kalkulasi pada aplikasi mobile terlebih dahulu.',
             ),
 
           // A. Persiapan Tanah & Pondasi
@@ -278,13 +467,13 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
             subTotal: subF,
           ),
 
-          _buildRowSubTotal('SUB TOTAL BIAYA MATERIAL', totalMaterial),
+          _buildRowSubTotal('Total Biaya Material', totalMaterial),
           const SizedBox(height: 24),
 
           // G. Upah Tenaga Kerja
           if (hasilG != null) ...[
             _buildSeksiUpah(hasilG),
-            _buildRowSubTotal('SUB TOTAL BIAYA UPAH', totalUpah),
+            _buildRowSubTotal('Total Biaya Upah Tenaga Kerja', totalUpah),
             const SizedBox(height: 24),
           ],
 
@@ -299,13 +488,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
   // Item rows per menu
 
   List<_BarisRAB> _itemsMenuA(_VolumePerhitungan v) => [
-    _BarisRAB(
-      'Pembersihan Lapangan',
-      v.volBersih,
-      'm²',
-      0,
-      override: 0,
-    ),
+    _BarisRAB('Pembersihan Lapangan', v.volBersih, 'm²', 0, override: 0),
     _BarisRAB(
       'Pemasangan Bouwplank',
       v.volBouwplank,
@@ -339,7 +522,6 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       'm³',
       _hp('pasir_urug') * _k('mat_pasir_urug'),
     ),
-    // Aanstamping: hanya biaya pasir urugan (batu_kali dihitung di baris Pasangan Batu Kali)
     _BarisRAB(
       'Aanstamping / Batu Kosong (Menerus)',
       v.volAanstampMenerus,
@@ -352,8 +534,6 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       'm³',
       _hp('pasir_urug') * _k('mat_aanstamp_pasir_urug'),
     ),
-    // Pasangan Batu Kali: volume mencakup batu kali + aanstamping (sesuai engine Mobile)
-    // batuKali = (aanstampMenerus + aanstampTapak + volBatuKali) × k.matBatuKali
     _BarisRAB(
       'Pasangan Batu Kali 1:4 (termasuk Aanstamping)',
       v.volAanstampMenerus + v.volAanstampTapak + v.volBatuKali,
@@ -697,7 +877,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
     return t;
   }
 
-  //UI Widgets 
+  //UI Widgets
   Widget _buildSeksiRAB({
     required String kode,
     required String judul,
@@ -719,7 +899,6 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -737,11 +916,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
               ),
             ),
           ),
-
-          // Header kolom tabel
           _buildHeaderKolom(),
-
-          // Baris data
           ...itemAda.asMap().entries.map((e) {
             final item = e.value;
             return _buildBarisData(
@@ -753,8 +928,6 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
               item.volume * item.hargaSatuan,
             );
           }),
-
-          // Sub-total
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             decoration: BoxDecoration(
@@ -793,12 +966,12 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
       color: const Color(0xFFE3EAE6),
       child: Row(
         children: [
-          _thCell('No', flex: 1),
+          _thCell('No.', flex: 1),
           _thCell('Uraian Pekerjaan', flex: 5),
           _thCell('Volume', flex: 2, align: TextAlign.right),
           _thCell('Sat.', flex: 2, align: TextAlign.center),
-          _thCell('Harga Satuan (Rp)', flex: 3, align: TextAlign.right),
-          _thCell('Jumlah Harga (Rp)', flex: 3, align: TextAlign.right),
+          _thCell('Harga Satuan', flex: 3, align: TextAlign.right),
+          _thCell('Jumlah Harga', flex: 3, align: TextAlign.right),
         ],
       ),
     );
@@ -918,12 +1091,12 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
             color: const Color(0xFFE3EAE6),
             child: Row(
               children: [
-                _thCell('No', flex: 1),
+                _thCell('No.', flex: 1),
                 _thCell('Jenis Tenaga Kerja', flex: 5),
                 _thCell('Total OH', flex: 2, align: TextAlign.right),
                 _thCell('Sat.', flex: 2, align: TextAlign.center),
-                _thCell('Tarif / OH (Rp)', flex: 3, align: TextAlign.right),
-                _thCell('Jumlah Biaya (Rp)', flex: 3, align: TextAlign.right),
+                _thCell('Upah per OH', flex: 3, align: TextAlign.right),
+                _thCell('Total Upah', flex: 3, align: TextAlign.right),
               ],
             ),
           ),
@@ -1022,7 +1195,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Text(
-            'GRAND TOTAL ESTIMASI BIAYA',
+            'TOTAL AKHIR ESTIMASI BIAYA',
             style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.bold,
@@ -1066,9 +1239,9 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
           const SizedBox(height: 6),
           Text(
             '• Dokumen ini merupakan Estimasi Cepat (Quick Count), bukan RAB detail.\n'
-            '• Harga satuan menggunakan data yang terkunci pada tanggal snapshot proyek.\n'
-            '• Koefisien material mengacu pada standar SNI yang berlaku.\n'
-            '• Untuk RAB resmi, diperlukan survey lapangan dan analisa harga satuan setempat.',
+            '• Harga satuan menggunakan referensi data yang telah dikunci pada saat pengambilan snapshot proyek.\n'
+            '• Analisa koefisien material mengacu pada Standar Nasional Indonesia (SNI) yang berlaku.\n'
+            '• Untuk kebutuhan RAB teknis secara formal, diperlukan survei lapangan mendalam dan analisa harga satuan wilayah setempat.',
             style: TextStyle(
               fontSize: 11,
               color: Colors.amber[800],
@@ -1125,7 +1298,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Informasi Proyek',
+            'Informasi Umum Proyek',
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
@@ -1133,7 +1306,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
             children: [
               _buildInfoItem(
                 Icons.home_work_outlined,
-                'Nama Proyek',
+                'Judul Proyek',
                 p.projectName,
                 const Color(0xFF4CAF50),
               ),
@@ -1154,7 +1327,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
               const SizedBox(width: 16),
               _buildInfoItem(
                 Icons.calendar_today_outlined,
-                'Tanggal Survey',
+                'Tanggal Survey Lapangan',
                 _formatTanggal.format(p.createdAt),
                 const Color(0xFFFF9800),
               ),
@@ -1225,7 +1398,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
           Icon(Icons.calculate_outlined, size: 60, color: Colors.grey[300]),
           const SizedBox(height: 16),
           const Text(
-            'Kalkulasi belum tersedia',
+            'Data Kalkulasi Belum Tersedia',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
@@ -1234,7 +1407,7 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            'Surveyor belum menyelesaikan kalkulasi untuk proyek ini.',
+            'Surveyor belum melakukan finalisasi kalkulasi pada sistem.',
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 13, color: Colors.grey[500]),
           ),
@@ -1266,63 +1439,32 @@ class _ProjectDetailPageState extends State<ProjectDetailPage> {
 // kalkulasi volume identik dengan LayananPerhitungan
 
 class _VolumePerhitungan {
-  // Menu A
-  final double volBersih;
-  final double volBouwplank;
-  final double volGalianMenerus;
-  final double volPasirMenerus;
-  final double volAanstampMenerus;
-  final double volBatuKali;
-  final double volGalianTapak;
-  final double volPasirTapak;
-  final double volAanstampTapak;
-  final double volBetonTapak;
-  final double volUrugMenerus;
-  final double volUrugTapak;
-
-  // Menu B
-  final double volSloof;
-  final double volKolom;
-  final double volRingBalok;
-  final double volDinding;
-  final double volPlester;
-  final double volAcian;
-
-  // Menu C
-  final double luasLantai;
-  final double volTimbunan;
-  final double volPasirLantai;
-  final double volCorLantai;
-  final double volKeramik;
-
-  // Menu D
-  final double volKusenPintu;
-  final double volDaunPintu;
-  final double volKusenVentilasi;
-  final int jmlKunci;
-  final int jmlEngselPintu;
-  final double volKusenJendela;
-  final double volDaunJendela;
-  final double volKaca;
+  final double volBersih, volBouwplank, volGalianMenerus, volPasirMenerus;
+  final double volAanstampMenerus, volBatuKali, volGalianTapak, volPasirTapak;
+  final double volAanstampTapak, volBetonTapak, volUrugMenerus, volUrugTapak;
+  final double volSloof,
+      volKolom,
+      volRingBalok,
+      volDinding,
+      volPlester,
+      volAcian;
+  final double luasLantai,
+      volTimbunan,
+      volPasirLantai,
+      volCorLantai,
+      volKeramik;
+  final double volKusenPintu, volDaunPintu, volKusenVentilasi;
+  final int jmlKunci, jmlEngselPintu;
+  final double volKusenJendela, volDaunJendela, volKaca;
   final int jmlEngselJendela;
-
-  // Menu E
-  final double volPlafon;
-  final double volListPlafon;
-  final double volRangkaAtap;
-  final double volGenteng;
-  final double volListplank;
-  final double volNok;
-
-  // Menu F (derived)
-  final double volCatTembok;
-  final double volCatPlafon;
-  final double volCatKayu;
-  final double volCatTembokPlafon;
-  final int jmlLampu;
-  final int jmlSaklar1;
-  final int jmlSaklar2;
-  final int jmlStopKontak;
+  final double volPlafon,
+      volListPlafon,
+      volRangkaAtap,
+      volGenteng,
+      volListplank,
+      volNok;
+  final double volCatTembok, volCatPlafon, volCatKayu, volCatTembokPlafon;
+  final int jmlLampu, jmlSaklar1, jmlSaklar2, jmlStopKontak;
 
   const _VolumePerhitungan({
     required this.volBersih,
@@ -1375,7 +1517,6 @@ class _VolumePerhitungan {
 
   /// Rumus identik dengan LayananPerhitungan di Mobile
   factory _VolumePerhitungan.dariInput(InputSurveyor i) {
-    // Menu A
     final volBersih = i.pTanah * i.lTanah;
     final volBouwplank = (i.pTanah + i.lTanah) * 2;
     final volGalianMenerus = i.pPondasi * 0.80 * 0.85;
@@ -1388,23 +1529,17 @@ class _VolumePerhitungan {
     final volBetonTapak = i.jmlTitikTapak * 0.3335;
     final volUrugMenerus = volGalianMenerus * 0.25;
     final volUrugTapak = volGalianTapak * 0.75;
-
-    // Menu B
     final volSloof = i.pDinding * 0.15 * 0.20;
     final volKolom = i.jmlKolom * 0.13 * 0.13 * 3.60;
     final volRingBalok = i.pDinding * 0.15 * 0.15;
     final volDinding = (i.pDinding * 3.60) * 0.825;
     final volPlester = volDinding * 2;
     final volAcian = volDinding * 2;
-
-    // Menu C
     final luasLantai = i.pBangunan * i.lBangunan;
     final volTimbunan = luasLantai * 0.40;
     final volPasirLantai = luasLantai * 0.05;
     final volCorLantai = luasLantai * 0.05;
     final volKeramik = luasLantai;
-
-    // Menu D
     final volKusenPintu = i.jmlPintu * (5.36 * 0.13 * 0.06);
     final volDaunPintu = i.jmlPintu * (2.10 * 0.80);
     final volKusenVentilasi = i.jmlPintu * (3.08 * 0.13 * 0.06);
@@ -1414,16 +1549,12 @@ class _VolumePerhitungan {
     final volDaunJendela = i.jmlJendela * (0.80 * 0.60);
     final volKaca = i.jmlJendela * (0.68 * 0.46);
     final jmlEngselJendela = i.jmlJendela * 2;
-
-    // Menu E
     final volPlafon = i.pBangunan * i.lBangunan;
     final volListPlafon = 2 * (i.pBangunan + i.lBangunan);
     final volRangkaAtap = ((i.pBangunan + 2) * (i.lBangunan + 2)) / 0.866;
     final volGenteng = volRangkaAtap;
     final volListplank = 2 * ((i.pBangunan + 2) + (i.lBangunan + 2));
     final volNok = i.pBangunan + 2;
-
-    // Menu F
     final volCatTembok = volDinding;
     final volCatPlafon = volPlafon;
     final volCatKayu = volDaunPintu + volDaunJendela;

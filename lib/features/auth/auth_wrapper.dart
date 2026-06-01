@@ -24,36 +24,25 @@ class AuthWrapper extends StatelessWidget {
         if (!snapshot.hasData) {
           return const LoginPage();
         }
-        
+
         User user = snapshot.data!;
 
-        return FutureBuilder<QuerySnapshot>( 
+        return FutureBuilder<QuerySnapshot>(
           future: FirebaseFirestore.instance
               .collection('users')
-              .where('email', isEqualTo: user.email) 
+              .where('email', isEqualTo: user.email)
               .limit(1)
               .get(),
           builder: (context, querySnapshot) {
-            
             if (querySnapshot.connectionState == ConnectionState.waiting) {
-              return const Scaffold(
-                body: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      CircularProgressIndicator(color: AppStyles.primaryGreen),
-                      SizedBox(height: 10),
-                      Text("Memeriksa Hak Akses..."),
-                    ],
-                  ),
-                ),
-              );
+              return const LoginPage();
             }
 
             if (querySnapshot.hasData && querySnapshot.data!.docs.isNotEmpty) {
-              var userDoc = querySnapshot.data!.docs.first; 
-              Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-              
+              var userDoc = querySnapshot.data!.docs.first;
+              Map<String, dynamic> userData =
+                  userDoc.data() as Map<String, dynamic>;
+
               String role = userData['role'] ?? 'user';
               bool isActive = userData['is_active'] ?? true;
 
@@ -70,17 +59,27 @@ class AuthWrapper extends StatelessWidget {
                 } else {
                   return _buildErrorScreen(
                     context,
-                    "Admin tidak dapat mengakses aplikasi mobile. Silakan login via Web.",
+                    "Akses Ditolak!\nAdmin tidak dapat mengakses aplikasi mobile. Silakan login via Website.",
                   );
                 }
               } else if (role == 'user') {
-                return const UserMainPage();
+                if (!kIsWeb) {
+                  return const UserMainPage();
+                } else {
+                  return _buildErrorScreen(
+                    context,
+                    "Akses Ditolak!\nPengguna biasa (User) tidak dapat mengakses Web Admin. Silakan login via Aplikasi Mobile.",
+                  );
+                }
               } else {
                 return _buildErrorScreen(context, "Role tidak dikenali.");
               }
             }
 
-            return _buildErrorScreen(context, "Email Anda tidak terdaftar di sistem.");
+            return _buildErrorScreen(
+              context,
+              "Email Anda tidak terdaftar di sistem.",
+            );
           },
         );
       },

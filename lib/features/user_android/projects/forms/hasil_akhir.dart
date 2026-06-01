@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../project_estimation_page.dart';
 import '../../../../shared/services/estimasi_provider.dart';
 import '../../../../shared/utils/styles.dart';
+import '../../../../shared/utils/pdf_generator.dart';
 
-class HasilAkhirPage extends StatelessWidget {
+class HasilAkhirPage extends StatefulWidget {
   final String projectId;
   final String projectName;
   final String clientName;
@@ -18,8 +20,19 @@ class HasilAkhirPage extends StatelessWidget {
     required this.clientName,
   });
 
-  static final _formatRp =
-      NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0);
+  @override
+  State<HasilAkhirPage> createState() => _HasilAkhirPageState();
+}
+
+class _HasilAkhirPageState extends State<HasilAkhirPage> {
+  // Tambahkan state loading untuk PDF
+  bool _isGeneratingPdf = false;
+
+  static final _formatRp = NumberFormat.currency(
+    locale: 'id_ID',
+    symbol: 'Rp ',
+    decimalDigits: 0,
+  );
   static final _formatOh = NumberFormat('#,##0.00', 'id_ID');
 
   static const int _stdPekerja = 3;
@@ -59,13 +72,18 @@ class HasilAkhirPage extends StatelessWidget {
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Hasil Estimasi',
-                style: TextStyle(
-                    color: Colors.black87,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 17)),
-            Text(projectName,
-                style: const TextStyle(color: Colors.grey, fontSize: 12)),
+            const Text(
+              'Hasil Estimasi',
+              style: TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.bold,
+                fontSize: 17,
+              ),
+            ),
+            Text(
+              widget.projectName,
+              style: const TextStyle(color: Colors.grey, fontSize: 12),
+            ),
           ],
         ),
       ),
@@ -77,10 +95,12 @@ class HasilAkhirPage extends StatelessWidget {
         children: [
           // Ringkasan 2 komponen
           _buildRingkasanKomponen(
-              rekap.totalBiayaMaterial, hasilG.totalBiayaUpah),
+            rekap.totalBiayaMaterial,
+            hasilG.totalBiayaUpah,
+          ),
           _buildDivider(),
 
-          // Estimasi Durasi 
+          // Estimasi Durasi
           _buildSectionLabel('ESTIMASI DURASI'),
           _buildDurasiTile(totalOh, estimasiHari),
           _buildDivider(),
@@ -112,8 +132,10 @@ class HasilAkhirPage extends StatelessWidget {
                   rekap.biayaDinding +
                   rekap.biayaSemenPlester,
               items: [
-                _Item('Besi Tulangan (Sloof + Kolom + Ring Balok)',
-                    rekap.biayaBesi),
+                _Item(
+                  'Besi Tulangan (Sloof + Kolom + Ring Balok)',
+                  rekap.biayaBesi,
+                ),
                 _Item('Pasangan Dinding Bata 1:4', rekap.biayaDinding),
                 _Item('Plesteran & Acian', rekap.biayaSemenPlester),
               ],
@@ -160,7 +182,10 @@ class HasilAkhirPage extends StatelessWidget {
                   rekap.biayaAtap +
                   rekap.biayaListplank,
               items: [
-                _Item('Rangka Plafon Hollow 4×4 & 2×4', rekap.biayaRangkaPlafon),
+                _Item(
+                  'Rangka Plafon Hollow 4×4 & 2×4',
+                  rekap.biayaRangkaPlafon,
+                ),
                 _Item('Papan Gypsum 9mm', rekap.biayaGypsum),
                 _Item('List Profil Kayu Plafon', rekap.biayaListPlafon),
                 _Item('Rangka Atap + Genteng Galvalum + Nok', rekap.biayaAtap),
@@ -172,8 +197,9 @@ class HasilAkhirPage extends StatelessWidget {
             _buildAccordion(
               kode: 'F',
               judul: 'Finishing, Cat & Instalasi Listrik',
-              subTotal:
-                  rekap.biayaCatTembok + rekap.biayaCatKayu + rekap.biayaListrik,
+              subTotal: rekap.biayaCatTembok +
+                  rekap.biayaCatKayu +
+                  rekap.biayaListrik,
               items: [
                 _Item('Pengecatan Tembok & Plafon', rekap.biayaCatTembok),
                 _Item('Pengecatan Kayu', rekap.biayaCatKayu),
@@ -184,11 +210,91 @@ class HasilAkhirPage extends StatelessWidget {
           _buildTotalSeksi('Total Biaya Material', rekap.totalBiayaMaterial),
           _buildDivider(),
 
-          // Rincian Biaya Upah 
+          // Rincian Biaya Upah
           _buildSectionLabel('RINCIAN BIAYA UPAH'),
           _buildAccordionUpah(hasilG),
           _buildTotalSeksi('Total Biaya Upah', hasilG.totalBiayaUpah),
           _buildDivider(),
+
+          // Tombol cetak PDF DENGAN LOADING
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: OutlinedButton.icon(
+                onPressed: _isGeneratingPdf
+                    ? null
+                    : () async {
+                        setState(() => _isGeneratingPdf = true);
+
+                        try {
+                          final p = context.read<EstimasiProvider>();
+                          final surveyor = FirebaseAuth
+                                  .instance.currentUser?.displayName ??
+                              '';
+
+                          // Jeda sedikit agar UI sempat render indikator muter
+                          await Future.delayed(
+                              const Duration(milliseconds: 150));
+
+                          await generateRABPdf(
+                            data: DataPdfRAB(
+                              namaProyek: widget.projectName,
+                              namaKlien: widget.clientName,
+                              namaSurveyor: surveyor,
+                              tanggalDibuat: DateTime.now(),
+                              menuA: p.hasilMenuA,
+                              menuB: p.hasilMenuB,
+                              menuC: p.hasilMenuC,
+                              menuD: p.hasilMenuD,
+                              menuE: p.hasilMenuE,
+                              menuF: p.hasilMenuF,
+                              menuG: p.hasilMenuG,
+                              rekap: p.rekapMaterial,
+                              snapshotHarga: p.snapshotHargaMaterial,
+                              snapshotKoefisien: p.snapshotKoefisien,
+                            ),
+                          );
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Gagal mencetak PDF: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
+                          }
+                        } finally {
+                          if (mounted) {
+                            setState(() => _isGeneratingPdf = false);
+                          }
+                        }
+                      },
+                icon: _isGeneratingPdf
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          color: AppStyles.primaryGreen,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                label: Text(
+                  _isGeneratingPdf ? 'Menyiapkan PDF...' : 'Cetak Estimasi (PDF)',
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppStyles.primaryGreen,
+                  side: const BorderSide(color: AppStyles.primaryGreen),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+              ),
+            ),
+          ),
 
           // Tombol kembali
           Padding(
@@ -201,21 +307,26 @@ class HasilAkhirPage extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => ProjectEstimationPage(
-                      projectId: projectId,
-                      projectName: projectName,
-                      clientName: clientName,
+                      projectId: widget.projectId,
+                      projectName: widget.projectName,
+                      clientName: widget.clientName,
                     ),
                   ),
                   (route) => route.isFirst,
                 ),
                 icon: const Icon(Icons.home_outlined, color: Colors.white),
-                label: const Text('Kembali ke Menu Estimasi',
-                    style: TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.bold)),
+                label: const Text(
+                  'Kembali ke Menu Estimasi',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppStyles.primaryGreen,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   elevation: 0,
                 ),
               ),
@@ -226,8 +337,7 @@ class HasilAkhirPage extends StatelessWidget {
     );
   }
 
-  // Sticky Grand Total 
-
+  // Sticky Grand Total
   Widget _buildStickyGrandTotal(double grandTotal) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
@@ -235,9 +345,10 @@ class HasilAkhirPage extends StatelessWidget {
         color: AppStyles.primaryGreen,
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.15),
-              blurRadius: 8,
-              offset: const Offset(0, -2)),
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
         ],
       ),
       child: SafeArea(
@@ -249,22 +360,28 @@ class HasilAkhirPage extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('GRAND TOTAL ESTIMASI',
-                    style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white70,
-                        letterSpacing: 0.5)),
-                Text('Material + Upah',
-                    style: TextStyle(fontSize: 10, color: Colors.white54)),
+                Text(
+                  'GRAND TOTAL ESTIMASI',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white70,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                Text(
+                  'Material + Upah',
+                  style: TextStyle(fontSize: 10, color: Colors.white54),
+                ),
               ],
             ),
             Text(
               _formatRp.format(grandTotal),
               style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white),
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ],
         ),
@@ -272,8 +389,7 @@ class HasilAkhirPage extends StatelessWidget {
     );
   }
 
-  // Ringkasan 2 komponen 
-
+  // Ringkasan 2 komponen
   Widget _buildRingkasanKomponen(double totalMaterial, double totalUpah) {
     return Container(
       color: Colors.white,
@@ -281,12 +397,20 @@ class HasilAkhirPage extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-              child: _buildChipKomponen(
-                  'Material', totalMaterial, const Color(0xFF1565C0))),
+            child: _buildChipKomponen(
+              'Material',
+              totalMaterial,
+              const Color(0xFF1565C0),
+            ),
+          ),
           const SizedBox(width: 12),
           Expanded(
-              child: _buildChipKomponen(
-                  'Upah', totalUpah, const Color(0xFFE65100))),
+            child: _buildChipKomponen(
+              'Upah',
+              totalUpah,
+              const Color(0xFFE65100),
+            ),
+          ),
         ],
       ),
     );
@@ -303,21 +427,31 @@ class HasilAkhirPage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: TextStyle(fontSize: 11, color: warna, fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: warna,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(_formatRp.format(nilai),
-              style: TextStyle(
-                  fontSize: 14, fontWeight: FontWeight.bold, color: warna),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+          Text(
+            _formatRp.format(nilai),
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: warna,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
   }
 
-  // Estimasi Durasi 
-
+  // Estimasi Durasi
   Widget _buildDurasiTile(double totalOh, int estimasiHari) {
     return Container(
       color: Colors.white,
@@ -330,19 +464,25 @@ class HasilAkhirPage extends StatelessWidget {
               color: AppStyles.primaryGreen.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.schedule_outlined,
-                color: AppStyles.primaryGreen, size: 20),
+            child: const Icon(
+              Icons.schedule_outlined,
+              color: AppStyles.primaryGreen,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('$estimasiHari Hari Kerja',
-                    style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87)),
+                Text(
+                  '$estimasiHari Hari Kerja',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   '${_formatOh.format(totalOh)} OH ÷ ${_stdPekerja + _stdTukang + _stdMandor} orang',
@@ -357,7 +497,6 @@ class HasilAkhirPage extends StatelessWidget {
   }
 
   //  Accordion Material
-
   Widget _buildAccordion({
     required String kode,
     required String judul,
@@ -380,38 +519,43 @@ class HasilAkhirPage extends StatelessWidget {
             color: AppStyles.primaryGreen.withOpacity(0.1),
             borderRadius: BorderRadius.circular(6),
           ),
-          child: Text(kode,
-              style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: AppStyles.primaryGreen)),
-        ),
-        title: Text(judul,
+          child: Text(
+            kode,
             style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87)),
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: AppStyles.primaryGreen,
+            ),
+          ),
+        ),
+        title: Text(
+          judul,
+          style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(_formatRp.format(subTotal),
-                style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: AppStyles.primaryGreen)),
+            Text(
+              _formatRp.format(subTotal),
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: AppStyles.primaryGreen,
+              ),
+            ),
             const SizedBox(width: 4),
             const Icon(Icons.expand_more, color: Colors.grey, size: 18),
           ],
         ),
-        // Sembunyikan icon default karena kita punya trailing sendiri
         expandedAlignment: Alignment.topLeft,
         children: [
           const Divider(height: 1, indent: 16, endIndent: 16),
           ...itemAda.map((item) => _buildBarisItem(item)),
-          Container(
-            height: 1,
-            color: Colors.grey[100],
-          ),
+          Container(height: 1, color: Colors.grey[100]),
         ],
       ),
     );
@@ -423,22 +567,26 @@ class HasilAkhirPage extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(item.nama,
-                style: TextStyle(fontSize: 12, color: Colors.grey[700])),
+            child: Text(
+              item.nama,
+              style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+            ),
           ),
           const SizedBox(width: 8),
-          Text(_formatRp.format(item.biaya),
-              style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87)),
+          Text(
+            _formatRp.format(item.biaya),
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
+            ),
+          ),
         ],
       ),
     );
   }
 
   // Accordion Upah
-
   Widget _buildAccordionUpah(dynamic hasilG) {
     final upahPekerja = hasilG.totalOhPekerja > 0
         ? hasilG.biayaUpahPekerja / hasilG.totalOhPekerja
@@ -463,25 +611,34 @@ class HasilAkhirPage extends StatelessWidget {
             color: AppStyles.primaryGreen.withOpacity(0.1),
             borderRadius: BorderRadius.circular(6),
           ),
-          child: const Text('G',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: AppStyles.primaryGreen)),
-        ),
-        title: const Text('Biaya Upah Tenaga Kerja',
+          child: const Text(
+            'G',
             style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87)),
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: AppStyles.primaryGreen,
+            ),
+          ),
+        ),
+        title: const Text(
+          'Biaya Upah Tenaga Kerja',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+          ),
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(_formatRp.format(hasilG.totalBiayaUpah),
-                style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: AppStyles.primaryGreen)),
+            Text(
+              _formatRp.format(hasilG.totalBiayaUpah),
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: AppStyles.primaryGreen,
+              ),
+            ),
             const SizedBox(width: 4),
             const Icon(Icons.expand_more, color: Colors.grey, size: 18),
           ],
@@ -489,14 +646,26 @@ class HasilAkhirPage extends StatelessWidget {
         expandedAlignment: Alignment.topLeft,
         children: [
           const Divider(height: 1, indent: 16, endIndent: 16),
-          _buildBarisUpah('Pekerja', hasilG.totalOhPekerja, upahPekerja,
-              hasilG.biayaUpahPekerja),
+          _buildBarisUpah(
+            'Pekerja',
+            hasilG.totalOhPekerja,
+            upahPekerja,
+            hasilG.biayaUpahPekerja,
+          ),
           Divider(height: 1, color: Colors.grey[100]),
-          _buildBarisUpah('Tukang', hasilG.totalOhTukang, upahTukang,
-              hasilG.biayaUpahTukang),
+          _buildBarisUpah(
+            'Tukang',
+            hasilG.totalOhTukang,
+            upahTukang,
+            hasilG.biayaUpahTukang,
+          ),
           Divider(height: 1, color: Colors.grey[100]),
-          _buildBarisUpah('Mandor', hasilG.totalOhMandor, upahMandor,
-              hasilG.biayaUpahMandor),
+          _buildBarisUpah(
+            'Mandor',
+            hasilG.totalOhMandor,
+            upahMandor,
+            hasilG.biayaUpahMandor,
+          ),
           Container(height: 1, color: Colors.grey[100]),
         ],
       ),
@@ -504,7 +673,11 @@ class HasilAkhirPage extends StatelessWidget {
   }
 
   Widget _buildBarisUpah(
-      String jenis, double oh, double tarifPerOh, double totalBiaya) {
+    String jenis,
+    double oh,
+    double tarifPerOh,
+    double totalBiaya,
+  ) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(56, 10, 16, 10),
       child: Row(
@@ -514,11 +687,14 @@ class HasilAkhirPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(jenis,
-                    style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87)),
+                Text(
+                  jenis,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
                 const SizedBox(height: 2),
                 Text(
                   '${_formatOh.format(oh)} OH × ${_formatRp.format(tarifPerOh)}/OH',
@@ -527,29 +703,34 @@ class HasilAkhirPage extends StatelessWidget {
               ],
             ),
           ),
-          Text(_formatRp.format(totalBiaya),
-              style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87)),
+          Text(
+            _formatRp.format(totalBiaya),
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  // Helper Widgets 
-
+  // Helper Widgets
   Widget _buildSectionLabel(String label) {
     return Container(
       width: double.infinity,
       color: Colors.grey[50],
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
-      child: Text(label,
-          style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              color: Colors.grey[500],
-              letterSpacing: 0.8)),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: Colors.grey[500],
+          letterSpacing: 0.8,
+        ),
+      ),
     );
   }
 
@@ -560,16 +741,22 @@ class HasilAkhirPage extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87)),
-          Text(_formatRp.format(nilai),
-              style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppStyles.primaryGreen)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+            ),
+          ),
+          Text(
+            _formatRp.format(nilai),
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: AppStyles.primaryGreen,
+            ),
+          ),
         ],
       ),
     );
@@ -578,7 +765,6 @@ class HasilAkhirPage extends StatelessWidget {
   Widget _buildDivider() => Container(height: 8, color: Colors.grey[100]);
 
   // Empty State
-
   Widget _buildBelumAda(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -588,9 +774,10 @@ class HasilAkhirPage extends StatelessWidget {
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Hasil Estimasi',
-            style:
-                TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Hasil Estimasi',
+          style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold),
+        ),
       ),
       body: Center(
         child: Padding(
@@ -600,11 +787,14 @@ class HasilAkhirPage extends StatelessWidget {
             children: [
               Icon(Icons.calculate_outlined, size: 80, color: Colors.grey[300]),
               const SizedBox(height: 16),
-              const Text('Data belum tersedia',
-                  style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black54)),
+              const Text(
+                'Data belum tersedia',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black54,
+                ),
+              ),
               const SizedBox(height: 8),
               Text(
                 'Selesaikan semua menu (A–F) dan tekan\n"Simpan Data Akhir & Hitung" di Finishing.',
@@ -617,10 +807,13 @@ class HasilAkhirPage extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppStyles.primaryGreen,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
-                child: const Text('Kembali',
-                    style: TextStyle(color: Colors.white)),
+                child: const Text(
+                  'Kembali',
+                  style: TextStyle(color: Colors.white),
+                ),
               ),
             ],
           ),

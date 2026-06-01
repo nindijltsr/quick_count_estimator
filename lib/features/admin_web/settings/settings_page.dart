@@ -37,7 +37,7 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             const SizedBox(height: 5),
             Text(
-              "Kelola profil admin dan informasi sistem",
+              "Manajemen profil administrator dan informasi teknis sistem.",
               style: TextStyle(color: Colors.grey, fontSize: 13),
             ),
             const SizedBox(height: 30), 
@@ -55,7 +55,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         .snapshots(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) return _buildLoadingCard();
-                      if (!snapshot.hasData || !snapshot.data!.exists) return _buildErrorCard("Data tidak ditemukan");
+                      if (!snapshot.hasData || !snapshot.data!.exists) return _buildErrorCard("Data pengguna gagal dimuat.");
 
                       var data = snapshot.data!.data() as Map<String, dynamic>;
                       
@@ -184,7 +184,7 @@ class _SettingsPageState extends State<SettingsPage> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 elevation: 0,
               ),
-              child: const Text("Ubah Profil Admin", style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text("Perbarui Data Profil", style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -220,14 +220,14 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Informasi Sistem", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const Text("Informasi Teknis Sistem", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 20), 
           
-          _buildGreyInfoBox(Icons.apps, "Nama Aplikasi", "Quick Count Estimator"),
+          _buildGreyInfoBox(Icons.apps, "Label Aplikasi", "Quick Count Estimator"),
           const SizedBox(height: 12),
           _buildGreyInfoBox(Icons.layers, "Versi", "1.0.0"),
           const SizedBox(height: 12),
-          _buildGreyInfoBox(Icons.calendar_today, "Build Date", DateFormat('MMMM yyyy').format(DateTime.now())),
+          _buildGreyInfoBox(Icons.calendar_today, "Waktu Rilis", DateFormat('MMMM yyyy').format(DateTime.now())),
         ],
       ),
     );
@@ -268,7 +268,7 @@ class _SettingsPageState extends State<SettingsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("Bantuan Dan Dukungan", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const Text("Pusat Bantuan & Dukungan", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
           const SizedBox(height: 20),
           Row(
             children: [
@@ -276,7 +276,7 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(width: 20),
               Expanded(child: _buildGreyInfoBox(Icons.chat_bubble_outline, "WhatsApp", "08xxxxxx")),
               const SizedBox(width: 20),
-              Expanded(child: _buildGreyInfoBox(Icons.language, "Website", "www.webperusahaan.com")),
+              Expanded(child: _buildGreyInfoBox(Icons.language, "Situs Resmi", "www.webperusahaan.com")),
             ],
           )
         ],
@@ -317,18 +317,18 @@ class _SettingsPageState extends State<SettingsPage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text("Ubah Profil Admin", style: TextStyle(fontWeight: FontWeight.bold)),
+              title: const Text("Perbarui Data Profil", style: TextStyle(fontWeight: FontWeight.bold)),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: nameController,
-                    decoration: const InputDecoration(labelText: "Nama Lengkap", border: OutlineInputBorder()),
+                    decoration: const InputDecoration(labelText: "Nama Lengkap Administrator", border: OutlineInputBorder()),
                   ),
                   const SizedBox(height: 15),
                   TextField(
                     controller: phoneController,
-                    decoration: const InputDecoration(labelText: "Nomor Telepon", border: OutlineInputBorder()),
+                    decoration: const InputDecoration(labelText: "Nomor Kontak (WhatsApp)", border: OutlineInputBorder()),
                     keyboardType: TextInputType.phone,
                   ),
                 ],
@@ -350,7 +350,7 @@ class _SettingsPageState extends State<SettingsPage> {
                       if (mounted) {
                         Navigator.pop(ctx);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Profil berhasil diperbarui!"), backgroundColor: primaryDarkGreen)
+                          const SnackBar(content: Text("Data profil telah berhasil diperbarui."), backgroundColor: primaryDarkGreen)
                         );
                       }
                     } catch (e) {
@@ -358,7 +358,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     }
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: primaryDarkGreen),
-                  child: isDialogLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text("Simpan", style: TextStyle(color: Colors.white)),
+                  child: isDialogLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Text("Simpan Perubahan", style: TextStyle(color: Colors.white)),
                 ),
               ],
             );

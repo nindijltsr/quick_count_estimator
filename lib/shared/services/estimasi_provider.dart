@@ -32,6 +32,7 @@ class EstimasiProvider extends ChangeNotifier {
   DateTime? get tanggalSnapshotDiambil => _tanggalSnapshotDiambil;
   bool get snapshotTersedia => _snapshotHargaMaterial.isNotEmpty;
   Map<String, double> get snapshotHargaMaterial => _snapshotHargaMaterial;
+  Map<String, double> get snapshotKoefisien => _snapshotKoefisien;
 
   final LayananMasterHarga _layananHarga = LayananMasterHarga();
   final LayananProyek _layananProyek = LayananProyek();
@@ -441,7 +442,8 @@ class EstimasiProvider extends ChangeNotifier {
       await _catatAktivitas('SIMPAN_MENU_F');
       await _catatAktivitas(
         'KALKULASI_SELESAI',
-        detail: 'Grand Total: ${_rekapMaterial!.totalBiayaMaterial.toStringAsFixed(0)}',
+        detail:
+            'Grand Total: ${_rekapMaterial!.totalBiayaMaterial.toStringAsFixed(0)}',
       );
 
       _tanggalSnapshotDiambil = DateTime.now();
@@ -540,20 +542,25 @@ class EstimasiProvider extends ChangeNotifier {
           );
           _snapshotHargaUpah =
               (rawUpah as Map?)?.map(
-                (k, v) => MapEntry(k.toString(), (v as num?)?.toDouble() ?? 0.0),
+                (k, v) =>
+                    MapEntry(k.toString(), (v as num?)?.toDouble() ?? 0.0),
               ) ??
               {};
           _snapshotKoefisien =
               (rawKoef as Map?)?.map(
-                (k, v) => MapEntry(k.toString(), (v as num?)?.toDouble() ?? 0.0),
+                (k, v) =>
+                    MapEntry(k.toString(), (v as num?)?.toDouble() ?? 0.0),
               ) ??
               {};
           _tanggalSnapshotDiambil =
-              (dataSnapshot['tanggal_snapshot_diambil'] as Timestamp?)?.toDate();
+              (dataSnapshot['tanggal_snapshot_diambil'] as Timestamp?)
+                  ?.toDate();
 
           // Inject koefisien snapshot ke engine
           _koefisienAktif = KoefisienAktif.dariFirestore(_snapshotKoefisien);
-          debugPrint('✓ Snapshot proyek dimuat — kalkulasi pakai data snapshot');
+          debugPrint(
+            '✓ Snapshot proyek dimuat — kalkulasi pakai data snapshot',
+          );
         }
       }
 
@@ -680,7 +687,8 @@ class EstimasiProvider extends ChangeNotifier {
         _hasilMenuC == null ||
         _hasilMenuD == null ||
         _hasilMenuE == null ||
-        _hasilMenuF == null) return;
+        _hasilMenuF == null)
+      return;
 
     debugPrint('🔄 Refresh dari master...');
 
@@ -749,7 +757,9 @@ class EstimasiProvider extends ChangeNotifier {
 
       await _catatAktivitas('REFRESH_MASTER');
 
-      debugPrint('✓ Refresh selesai — snapshot, kalkulasi & Firestore diperbarui');
+      debugPrint(
+        '✓ Refresh selesai — snapshot, kalkulasi & Firestore diperbarui',
+      );
       notifyListeners();
     } catch (e) {
       debugPrint('❌ Error refresh dari master: $e');
@@ -853,41 +863,72 @@ class EstimasiProvider extends ChangeNotifier {
   }
 
   HasilMenuA _buatMenuAKosong() => HasilMenuA(
-        volBersih: 0, volBouwplank: 0, volGalianMenerus: 0,
-        volPasirMenerus: 0, volAanstampMenerus: 0, volBatuKali: 0,
-        volGalianTapak: 0, volPasirTapak: 0, volAanstampTapak: 0,
-        volBetonTapak: 0, volUrugMenerus: 0, volUrugTapak: 0,
-        dihitungPada: DateTime.now(),
-      );
+    volBersih: 0,
+    volBouwplank: 0,
+    volGalianMenerus: 0,
+    volPasirMenerus: 0,
+    volAanstampMenerus: 0,
+    volBatuKali: 0,
+    volGalianTapak: 0,
+    volPasirTapak: 0,
+    volAanstampTapak: 0,
+    volBetonTapak: 0,
+    volUrugMenerus: 0,
+    volUrugTapak: 0,
+    dihitungPada: DateTime.now(),
+  );
 
   HasilMenuB _buatMenuBKosong() => HasilMenuB(
-        volSloof: 0, volKolom: 0, volRingBalok: 0,
-        volDinding: 0, volPlester: 0, volAcian: 0,
-        dihitungPada: DateTime.now(),
-      );
+    volSloof: 0,
+    volKolom: 0,
+    volRingBalok: 0,
+    volDinding: 0,
+    volPlester: 0,
+    volAcian: 0,
+    dihitungPada: DateTime.now(),
+  );
 
   HasilMenuC _buatMenuCKosong() => HasilMenuC(
-        luasLantai: 0, volTimbunan: 0, volPasirLantai: 0,
-        volCorLantai: 0, volKeramik: 0,
-        dihitungPada: DateTime.now(),
-      );
+    luasLantai: 0,
+    volTimbunan: 0,
+    volPasirLantai: 0,
+    volCorLantai: 0,
+    volKeramik: 0,
+    dihitungPada: DateTime.now(),
+  );
 
   HasilMenuD _buatMenuDKosong() => HasilMenuD(
-        volKusenPintu: 0, volDaunPintu: 0, volKusenVentilasi: 0,
-        jmlKunci: 0, jmlEngselPintu: 0, volKusenJendela: 0,
-        volDaunJendela: 0, volKaca: 0, jmlEngselJendela: 0,
-        volKusenTotal: 0, dihitungPada: DateTime.now(),
-      );
+    volKusenPintu: 0,
+    volDaunPintu: 0,
+    volKusenVentilasi: 0,
+    jmlKunci: 0,
+    jmlEngselPintu: 0,
+    volKusenJendela: 0,
+    volDaunJendela: 0,
+    volKaca: 0,
+    jmlEngselJendela: 0,
+    volKusenTotal: 0,
+    dihitungPada: DateTime.now(),
+  );
 
   HasilMenuE _buatMenuEKosong() => HasilMenuE(
-        volPlafon: 0, volListPlafon: 0, volRangkaAtap: 0,
-        volGenteng: 0, volListplank: 0, volNok: 0,
-        dihitungPada: DateTime.now(),
-      );
+    volPlafon: 0,
+    volListPlafon: 0,
+    volRangkaAtap: 0,
+    volGenteng: 0,
+    volListplank: 0,
+    volNok: 0,
+    dihitungPada: DateTime.now(),
+  );
 
   HasilMenuF _buatMenuFKosong() => HasilMenuF(
-        volCatTembok: 0, volCatPlafon: 0, volCatKayu: 0,
-        volLampu: 0, volSaklar1: 0, volSaklar2: 0,
-        volStopKontak: 0, dihitungPada: DateTime.now(),
-      );
+    volCatTembok: 0,
+    volCatPlafon: 0,
+    volCatKayu: 0,
+    volLampu: 0,
+    volSaklar1: 0,
+    volSaklar2: 0,
+    volStopKontak: 0,
+    dihitungPada: DateTime.now(),
+  );
 }

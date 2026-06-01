@@ -7,8 +7,10 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'shared/services/auth_service.dart';
 import 'shared/services/estimasi_provider.dart';
-import 'shared/services/koefisien_provider.dart';  // ← baru
-import 'features/auth/auth_wrapper.dart';
+import 'shared/services/koefisien_provider.dart';  
+
+// IMPORT FILE SPLASH SCREEN YANG BARU DIBUAT
+import 'features/splash/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,7 +32,6 @@ void main() async {
   }
 
   // Inisialisasi koefisien 1x sebelum runApp.
-  // Seed guard berjalan di sini — aman, tidak overwrite jika sudah ada.
   final koefisienProvider = KoefisienProvider();
   await koefisienProvider.inisialisasi(idAdmin: 'system');
 
@@ -58,7 +59,8 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         useMaterial3: true,
       ),
-      home: const AuthWrapper(),
+      // UBAH BAGIAN HOME INI:
+      home: const SplashScreen(), 
     );
   }
 }

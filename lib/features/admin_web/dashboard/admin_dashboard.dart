@@ -68,7 +68,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                               ),
                             ),
                             Text(
-                              'Admin Panel',
+                              'Panel Admin',
                               style: TextStyle(
                                 color: Colors.white70,
                                 fontSize: 10,
@@ -83,10 +83,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 const Divider(color: Colors.white24),
 
                 _buildMenuItem(0, Icons.dashboard, 'Dashboard'),
-                _buildMenuItem(1, Icons.folder_open, 'Proyek'),
-                _buildMenuItem(2, Icons.storage, 'Master Harga'),
-                _buildMenuItem(3, Icons.calculate_outlined, 'Koefisien SNI'),
-                _buildMenuItem(4, Icons.people, 'Manajemen Akun'),
+                _buildMenuItem(1, Icons.folder_open, 'Manajemen Proyek'),
+                _buildMenuItem(2, Icons.storage, 'Data Master Harga'),
+                _buildMenuItem(3, Icons.calculate_outlined, 'Data Koefisien SNI'),
+                _buildMenuItem(4, Icons.people, 'Manajemen Pengguna'),
                 _buildMenuItem(5, Icons.history, 'Riwayat'),
                 _buildMenuItem(6, Icons.settings, 'Pengaturan'),
 
@@ -108,7 +108,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       backgroundColor: Colors.white,
                       foregroundColor: AppStyles.primaryGreen,
                     ),
-                    child: const Text('LOGOUT'),
+                    child: const Text('Keluar'),
                   ),
                 ),
               ],

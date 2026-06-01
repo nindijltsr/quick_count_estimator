@@ -43,13 +43,13 @@ class _ProjectPageState extends State<ProjectPage> {
           children: [
             // Header
             const Text(
-              'DAFTAR PROYEK',
+              'MANAJEMEN DATA PROYEK',
               style: TextStyle(
                   fontSize: 24, fontWeight: FontWeight.bold, letterSpacing: 1.2),
             ),
             const SizedBox(height: 5),
             const Text(
-              'Semua proyek yang telah di-survey oleh tim',
+              'Daftar seluruh proyek konstruksi yang telah melalui tahap survei lapangan.',
               style: TextStyle(color: Colors.grey, fontSize: 13),
             ),
             const SizedBox(height: 25),
@@ -61,7 +61,7 @@ class _ProjectPageState extends State<ProjectPage> {
                 controller: _searchController,
                 style: const TextStyle(fontSize: 14),
                 decoration: InputDecoration(
-                  hintText: 'Cari Proyek, Klien, atau Surveyor...',
+                  hintText: 'Cari berdasarkan nama proyek, klien, atau surveyor...',
                   hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
                   prefixIcon: Icon(Icons.search, size: 20, color: Colors.grey[500]),
                   suffixIcon: _searchQuery.isNotEmpty
@@ -101,7 +101,7 @@ class _ProjectPageState extends State<ProjectPage> {
                   }
 
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                    return const Center(child: Text('Belum ada data proyek.'));
+                    return const Center(child: Text('Data proyek belum tersedia.'));
                   }
 
                   final allProjects = snapshot.data!;
@@ -121,7 +121,7 @@ class _ProjectPageState extends State<ProjectPage> {
                         children: [
                           Icon(Icons.search_off, size: 40, color: Colors.grey[400]),
                           const SizedBox(height: 10),
-                          Text("Pencarian '$_searchQuery' tidak ditemukan.",
+                          Text("Hasil pencarian untuk '$_searchQuery' tidak ditemukan.",
                               style: TextStyle(color: Colors.grey[600])),
                         ],
                       ),
@@ -169,13 +169,13 @@ class _ProjectPageState extends State<ProjectPage> {
                                   columnSpacing: 25,
                                   dividerThickness: 1,
                                   columns: const [
-                                    DataColumn(label: Text('Nomor')),
+                                    DataColumn(label: Text('No.')),
                                     DataColumn(label: Text('Nama Proyek')),
                                     DataColumn(label: Text('Nama Klien')),
                                     DataColumn(label: Text('Surveyor')),
-                                    DataColumn(label: Text('Tanggal')),
-                                    DataColumn(label: Text('Status')),
-                                    DataColumn(label: Text('Aksi')),
+                                    DataColumn(label: Text('Tanggal Survey')),
+                                    DataColumn(label: Text('Status Estimasi')),
+                                    DataColumn(label: Text('Tindakan')),
                                   ],
                                   rows: List.generate(
                                     filteredProjects.length,
@@ -210,7 +210,7 @@ class _ProjectPageState extends State<ProjectPage> {
                                                 Icons.remove_red_eye,
                                                 size: 14,
                                                 color: Colors.white),
-                                            label: const Text('Detail',
+                                            label: const Text('Lihat Detail',
                                                 style: TextStyle(
                                                     fontSize: 12,
                                                     fontWeight:
@@ -262,12 +262,12 @@ class _ProjectPageState extends State<ProjectPage> {
       case 'sedang_berjalan':
         bgColor = Colors.orange[50]!;
         textColor = Colors.orange[800]!;
-        label = 'Berjalan';
+        label = 'Dalam Proses';
         break;
       default:
         bgColor = Colors.grey[100]!;
         textColor = Colors.grey[600]!;
-        label = 'Belum';
+        label = 'Belum Dimulai';
     }
 
     return Container(

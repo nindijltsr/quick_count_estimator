@@ -106,25 +106,25 @@ class _DashboardPageState extends State<DashboardPage> {
   String _formatNamaAksi(String namaAksi) {
     switch (namaAksi) {
       case 'KALKULASI_SELESAI':
-        return 'Kalkulasi Estimasi Selesai';
+        return 'Penyelesaian Kalkulasi Estimasi';
       case 'SIMPAN_MENU_A':
-        return 'Simpan Data Persiapan & Pondasi';
+        return 'Penyimpanan Data Persiapan & Pondasi';
       case 'SIMPAN_MENU_B':
-        return 'Simpan Data Struktur & Dinding';
+        return 'Penyimpanan Data Struktur & Dinding';
       case 'SIMPAN_MENU_C':
-        return 'Simpan Data Lantai & Timbunan';
+        return 'Penyimpanan Data Lantai & Timbunan';
       case 'SIMPAN_MENU_D':
-        return 'Simpan Data Pintu & Jendela';
+        return 'Penyimpanan Data Pintu & Jendela';
       case 'SIMPAN_MENU_E':
-        return 'Simpan Data Atap & Plafon';
+        return 'Penyimpanan Data Atap & Plafon';
       case 'SIMPAN_MENU_F':
-        return 'Simpan Data Finishing & Listrik';
+        return 'Penyimpanan Data Finishing & Listrik';
       case 'BUAT_PROYEK':
-        return 'Membuat Proyek Baru';
+        return 'Pembuatan Proyek Baru';
       case 'EDIT_PROYEK':
-        return 'Memperbarui Data Proyek';
+        return 'Pembaruan Data Proyek';
       case 'HAPUS_PROYEK':
-        return 'Menghapus Proyek';
+        return 'Penghapusan Proyek';
       case 'REFRESH_MASTER':
         return 'Refresh Data Master';
       case 'LOGIN':
@@ -208,7 +208,7 @@ class _DashboardPageState extends State<DashboardPage> {
           .limit(1)
           .snapshots(),
       builder: (context, snapshot) {
-        String namaAdmin = 'Admin';
+        String namaAdmin = 'Administrator';
         if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
           final data = snapshot.data!.docs.first.data() as Map<String, dynamic>;
           namaAdmin = data['name'] ?? 'Admin';
@@ -269,7 +269,7 @@ class _DashboardPageState extends State<DashboardPage> {
         Expanded(
           flex: 3,
           child: _KpiCard(
-            label: 'User Aktif',
+            label: 'Pengguna Aktif',
             icon: Icons.people_outline,
             stream: FirebaseFirestore.instance
                 .collection('users')
@@ -293,7 +293,7 @@ class _DashboardPageState extends State<DashboardPage> {
         Expanded(
           flex: 4,
           child: _KpiCardStatis(
-            label: 'Estimasi Selesai',
+            label: 'Kalkulasi Selesai',
             icon: Icons.check_circle_outline,
             aksen: true,
             nilai: _agregatProyek.selesai,
@@ -450,7 +450,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    '4 aktivitas terakhir surveyor',
+                    '4 Aktivitas Surveyor Terakhir',
                     style: TextStyle(fontSize: 11, color: Colors.grey[500]),
                   ),
                 ],
@@ -576,7 +576,7 @@ class _DashboardPageState extends State<DashboardPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text('Proyek Terbaru', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                      Text('5 proyek terakhir masuk', style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                      Text('5 Proyek Terbaru', style: TextStyle(fontSize: 11, color: Colors.grey[500])),
                     ],
                   ),
                   TextButton(
@@ -591,12 +591,12 @@ class _DashboardPageState extends State<DashboardPage> {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
               child: const Row(
                 children: [
-                  SizedBox(width: 32, child: Text('No', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87))),
+                  SizedBox(width: 32, child: Text('No.', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87))),
                   Expanded(flex: 3, child: Text('Nama Proyek', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87))),
                   Expanded(flex: 2, child: Text('Klien', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87))),
                   Expanded(flex: 2, child: Text('Surveyor', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87))),
                   SizedBox(width: 100, child: Text('Tanggal', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87))),
-                  SizedBox(width: 80, child: Text('Aksi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87))),
+                  SizedBox(width: 80, child: Text('Tindakan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.black87))),
                 ],
               ),
             ),
@@ -610,7 +610,7 @@ class _DashboardPageState extends State<DashboardPage> {
                 if (projects.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.all(24),
-                    child: Center(child: Text('Belum ada proyek.', style: TextStyle(fontSize: 13, color: Colors.grey[500]))),
+                    child: Center(child: Text('Belum ada data proyek.', style: TextStyle(fontSize: 13, color: Colors.grey[500]))),
                   );
                 }
                 final lima = projects.take(5).toList();

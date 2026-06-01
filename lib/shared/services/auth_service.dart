@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,20 +10,27 @@ class AuthService {
 
   Future<Map<String, dynamic>?> loginWithGoogle() async {
     try {
-      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      if (googleUser == null) return null;
+      User? user;
+      if (kIsWeb) {
+        GoogleAuthProvider authProvider = GoogleAuthProvider();
+        authProvider.setCustomParameters({'prompt': 'select_account'});
+        UserCredential userCredential = await _auth.signInWithPopup(authProvider);
+        user = userCredential.user;
+      } else {
+        final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+        if (googleUser == null) return null;
 
-      final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
+        final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+        final credential = GoogleAuthProvider.credential(
+          accessToken: googleAuth.accessToken,
+          idToken: googleAuth.idToken,
+        );
 
-      UserCredential userCredential =
-          await _auth.signInWithCredential(credential);
-      User? user = userCredential.user;
+        UserCredential userCredential = await _auth.signInWithCredential(credential);
+        user = userCredential.user;
+      }
 
+      // cek database
       if (user != null) {
         final QuerySnapshot result = await _firestore
             .collection('users')
@@ -77,12 +85,13 @@ class AuthService {
       );
     }
 
-    await _googleSignIn.signOut();
+    if (!kIsWeb) {
+      // SignOut Google hanya dieksekusi di Android/Mobile
+      await _googleSignIn.signOut();
+    }
     await _auth.signOut();
   }
 
-  /// Tulis satu entri ke riwayatAktivitas.
-  /// id_proyek dikosongkan karena login/logout tidak terkait proyek spesifik.
   Future<void> _catatLog({
     required String idPengguna,
     required String namaAksi,
