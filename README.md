@@ -1,16 +1,21 @@
-# quick_count_estimator
+# Quick Count Estimasi Konstruksi
 
-A new Flutter project.
+Aplikasi **Quick Count Estimasi Konstruksi** merupakan project **Tugas Akhir (TA) D3 Teknologi Informasi** yang dikembangkan untuk membantu proses estimasi kebutuhan material dan biaya tenaga kerja pada konstruksi rumah tinggal secara cepat dan praktis.
 
-## Getting Started
+### Teknologi
 
-This project is a starting point for a Flutter application.
+* Flutter
+* Firebase
+* Rule-Based System
+* AHSP sebagai dasar perhitungan
 
-A few resources to get you started if this is your first Flutter project:
+### Fitur Utama
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+* Estimasi kebutuhan material
+* Estimasi biaya tenaga kerja
+* Perhitungan berbasis Rule-Based System
+* Input data survei konstruksi
+* Dashboard pengelolaan data
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+> **Tugas Akhir — Quick Count Estimasi Konstruksi**
+> *Estimasi lebih cepat, perhitungan lebih terarah.*

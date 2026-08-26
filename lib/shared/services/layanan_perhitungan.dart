@@ -131,8 +131,7 @@ class LayananPerhitungan {
     );
   }
 
-  /// Kalkulasi material & upah menggunakan koefisien dari [k] (synchronous).
-  /// [k] berasal dari KoefisienProvider atau snapshot proyek — BUKAN fetch langsung.
+  /// Kalkulasi material & upah menggunakan koefisien
   ({RekapMaterial rekap, HasilMenuG menuG}) hitungMaterialDanUpah({
     required HasilMenuA a, required HasilMenuB b, required HasilMenuC c,
     required HasilMenuD d, required HasilMenuE e, required HasilMenuF f,

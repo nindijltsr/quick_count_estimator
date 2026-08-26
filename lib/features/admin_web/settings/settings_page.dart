@@ -227,7 +227,7 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 12),
           _buildGreyInfoBox(Icons.layers, "Versi", "1.0.0"),
           const SizedBox(height: 12),
-          _buildGreyInfoBox(Icons.calendar_today, "Waktu Rilis", DateFormat('MMMM yyyy').format(DateTime.now())),
+           _buildGreyInfoBox(Icons.calendar_today, "Waktu Rilis", DateFormat('MMMM yyyy').format(DateTime(2026, 1))),
         ],
       ),
     );
@@ -272,11 +272,11 @@ class _SettingsPageState extends State<SettingsPage> {
           const SizedBox(height: 20),
           Row(
             children: [
-              Expanded(child: _buildGreyInfoBox(Icons.email_outlined, "Email", "contoh@gmail.com")),
+              Expanded(child: _buildGreyInfoBox(Icons.email_outlined, "Email", "mulyakaryaabdi@gmail.com")),
               const SizedBox(width: 20),
-              Expanded(child: _buildGreyInfoBox(Icons.chat_bubble_outline, "WhatsApp", "08xxxxxx")),
+              Expanded(child: _buildGreyInfoBox(Icons.chat_bubble_outline, "WhatsApp", "+62 878-5815-5634")),
               const SizedBox(width: 20),
-              Expanded(child: _buildGreyInfoBox(Icons.language, "Situs Resmi", "www.webperusahaan.com")),
+              Expanded(child: _buildGreyInfoBox(Icons.language, "Situs Resmi", "indokontraktor.com")),
             ],
           )
         ],

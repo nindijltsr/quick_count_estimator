@@ -73,39 +73,37 @@ class _ProjectEstimationPageState extends State<ProjectEstimationPage> {
   }
 
   Future<void> _cekStatusBanner(EstimasiProvider provider) async {
-    final lastUpdate = await _layananNotif.ambilLastMasterUpdate();
+  final lastUpdate = await _layananNotif.ambilLastMasterUpdate();
+  if (!mounted) return;
+
+  setState(() {
+    _lastMasterUpdate = lastUpdate;
+    final snapshot = provider.tanggalSnapshotDiambil;
+    _adaBannerPeringatan =
+        lastUpdate != null &&
+        snapshot != null &&
+        lastUpdate.isAfter(snapshot);
+  });
+}
+
+void _mulaiListenBanner() {
+  _bannerSubscription = _layananNotif.streamLastMasterUpdate().listen((lastMaster) {
     if (!mounted) return;
-
-    setState(() {
-      _lastMasterUpdate = lastUpdate;
-      final snapshot = provider.tanggalSnapshotDiambil;
-      // Munculkan banner JIKA master lebih baru dari snapshot
-      _adaBannerPeringatan =
-          lastUpdate != null &&
-          (snapshot == null || lastUpdate.isAfter(snapshot));
-    });
-  }
-
-  /// Listen stream perubahan master — banner muncul reaktif tanpa harus back/forward.
-  void _mulaiListenBanner() {
-    _bannerSubscription = _layananNotif.streamLastMasterUpdate().listen((
-      lastMaster,
-    ) {
-      if (!mounted) return;
-      final provider = context.read<EstimasiProvider>();
-      final snapshot = provider.tanggalSnapshotDiambil;
-      final adaBanner =
-          lastMaster != null &&
-          (snapshot == null || lastMaster.isAfter(snapshot));
-      if (adaBanner != _adaBannerPeringatan ||
-          (lastMaster != null && lastMaster != _lastMasterUpdate)) {
-        setState(() {
-          _lastMasterUpdate = lastMaster;
-          _adaBannerPeringatan = adaBanner;
-        });
-      }
-    });
-  }
+    final provider = context.read<EstimasiProvider>();
+    final snapshot = provider.tanggalSnapshotDiambil;
+    final adaBanner =
+        lastMaster != null &&
+        snapshot != null &&
+        lastMaster.isAfter(snapshot);
+    if (adaBanner != _adaBannerPeringatan ||
+        (lastMaster != null && lastMaster != _lastMasterUpdate)) {
+      setState(() {
+        _lastMasterUpdate = lastMaster;
+        _adaBannerPeringatan = adaBanner;
+      });
+    }
+  });
+}
 
   @override
   void dispose() {
